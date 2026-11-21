@@ -6,10 +6,10 @@ Draft. IDs trace to the [original brief](../../../KIRO-SPEC-BRIEF-support-insigh
 
 - [ ] **T01 · Both · R1–R8:** Agree on records, query interfaces, repeat snapshots and shared synthetic fixtures. Record Q2–Q7 decisions or gates. Include duplicate IDs, malformed rows, nullable fields, masked details, week boundaries and expected report totals.
   - [ ] **T01.1** Agree on adapter output, source-scoped identity, label versions, snapshot replacement and repository signatures.
-  - [ ] **T01.2** Record Q2–Q7 plus denominator and hand-label policy. Mark the tasks each decision gates.
-  - [ ] **T01.3** Create the app skeleton and local setup instructions. Ignore exports, databases, sidecars and local credentials.
-  - [ ] **T01.4** Build one synthetic fixture with ticket, message, seed, daily metrics and KB inputs. Include a malformed row, a repeated snapshot, cross-source ID collisions, nullable fields and a Malaysia week boundary.
-  - [ ] **T01.5** Write expected import counts, gap membership, denominators, drill-down IDs and masked output. Both developers sign off before splitting work.
+  - [x] **T01.2** Record Q2–Q7 plus denominator and hand-label policy. Mark the tasks each decision gates.
+  - [x] **T01.3** Create the app skeleton and local setup instructions. Ignore exports, databases, sidecars and local credentials.
+  - [x] **T01.4** Build one synthetic fixture with ticket, message, seed, daily metrics and KB inputs. Include a malformed row, a repeated snapshot, cross-source ID collisions, nullable fields and a Malaysia week boundary.
+  - [ ] **T01.5** Write expected import counts, gap membership, denominators, drill-down IDs and masked output. The expected values are in `tests/fixtures/t01/expected.json`. Both developers must sign off before splitting work.
 
 ## 2. Import and labels
 

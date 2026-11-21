@@ -40,7 +40,7 @@ Keep raw exports and database sidecars local and gitignored. Bind the app to `12
 | Q2 | Name the reviewer for the stratified 100-chat sample. |
 | Q3–Q5 | Confirm staff-assisted resolution, the 11 legacy reasons and staff evidence rules. Confirm the denominator for unlabelled chats and how hand corrections affect reports. Show staff attribution as unknown where evidence is insufficient. |
 | Q6 | Confirm the KB snapshot. The 20 November Zaapi snapshot supports historical comparisons. Current Ah Va content would answer a different coverage question. |
-| Q7 storage and UI | SQLite fits local transactional writes. Benchmark DuckDB if rollups miss the target. Reserve Postgres for a future hosting decision. Streamlit offers built-in charts. FastAPI + HTML gives more control over reveal and editing. Static HTML needs a separate write path for corrections and notes. |
+| Q7 storage and UI | Use Next.js App Router for the frontend and backend, as requested. SQLite with Drizzle is the proposed local stack. Choose the SQLite driver and migration approach before T02. Benchmark DuckDB if rollups miss the target. Reserve Postgres for a future hosting decision. |
 | Q7 model and gaps | Propose Claude Haiku-class API with structured output. Compare synchronous calls with batch turnaround against the runtime gate. The legacy CLI is a comparison baseline. Compare keyword grouping, multilingual embeddings and model grouping on the same fixture. Keywords can split paraphrases, embeddings can miss exact product terms, and model grouping raises cost. Compare shortlist retrieval plus model coverage checks with local matching before choosing. |
 
 ## Pilot gates
