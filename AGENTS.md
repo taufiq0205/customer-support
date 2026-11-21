@@ -16,6 +16,11 @@ Support Insight is a local, single-user tool for the Photobook support lead. It 
 - Requirement IDs, source fields, or acceptance thresholds: read [Original brief](KIRO-SPEC-BRIEF-support-insight.md). Use the role specs for the later Ah Va decision.
 - For a change across both roles, read both specs and agree on record shapes, interfaces, and synthetic fixtures first. Keep open design choices pending owner approval.
 
+## Build workflow
+
+1. Before using a framework, library, or component, check for an applicable installable skill. If one exists, install it at project scope, then read and follow it when building the component. If no applicable skill exists, use the official docs.
+2. Build with tracer bullets. Start with the smallest working path through the affected layers. Verify it end to end with a synthetic fixture before expanding it.
+
 ## Data handling
 
 - Keep raw chats, contacts, local databases, and database sidecars off Git. Use synthetic fixtures in tests.
