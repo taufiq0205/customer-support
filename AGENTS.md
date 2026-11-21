@@ -27,4 +27,11 @@ Support Insight is a local, single-user tool for the Photobook support lead. It 
 
 1. Check the affected requirement and run focused tests. For shared data changes, verify import, report totals, and drill-down against the same fixture.
 2. Before committing, inspect the staged diff for personal data, credentials, and unrelated files.
-3. Use a scoped branch for later changes. Push or merge only with explicit authorization.
+
+## Git branches
+
+1. Check `git status` and preserve existing work. Fetch `origin` and start one branch per task from `origin/main`. If the task depends on an unmerged branch, use that branch as the base and record the dependency.
+2. Use `<type>/<short-slug>` in lowercase with hyphens. Include the issue number when available. Use `feature/` for new behavior, `bugfix/` for defects, `spike/` for research, `refactor/` for internal changes, and `docs/` or `chore/` for documentation or maintenance.
+3. Time-box spikes and record the findings. Move any proposed implementation to a fresh branch from the target base.
+4. Keep commits scoped. If the base moves, rebase unpublished work or merge the base into a shared branch. Preserve shared history.
+5. With explicit authorization, push the named branch and open a pull request against its base. Merge into `main` through a pull request after required checks and reviews pass. Delete the task branch after merge with owner approval.
