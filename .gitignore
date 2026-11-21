@@ -1,1 +1,7 @@
 /photobook-xray-main
+
+# CX Support Tool — keep off Git
+*.db
+*.db-shm
+*.db-wal
+.env.local
