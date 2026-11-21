@@ -1,0 +1,26 @@
+{
+  "firstImport": { "read": 4, "inserted": 2, "updated": 1, "skipped": 1 },
+  "repeatImport": { "read": 4, "inserted": 0, "updated": 3, "skipped": 1 },
+  "ticketsAfterZaapiReplay": 2,
+  "ticketsAfterCrossSourceCollision": 3,
+  "messageCounts": {
+    "zaapi:A": 1,
+    "zaapi:B": 0,
+    "synthetic:A": 0
+  },
+  "latestOpenedAt": "2026-11-15T16:00:00Z",
+  "malaysiaIsoWeeks": {
+    "ZA-A": { "year": 2026, "week": 46 },
+    "ZA-B": { "year": 2026, "week": 47 }
+  },
+  "seed": { "matched": 2, "unmatched": 0, "missing": 0, "modelCalls": 0 },
+  "reportProposal": {
+    "excludeEmpty": { "tickets": ["ZA-A"], "denominator": 1, "labelCoverage": 1 },
+    "includeEmpty": { "tickets": ["ZA-A", "ZA-B"], "denominator": 2, "labelCoverage": 1 }
+  },
+  "gapExample": { "tickets": ["ZA-A"], "distinctTicketCount": 1 },
+  "privacy": {
+    "maskedSummary": "Email [email]",
+    "attachmentUrlStored": false
+  }
+}
