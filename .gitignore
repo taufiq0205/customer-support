@@ -1,7 +1,23 @@
 /photobook-xray-main
-
-# CX Support Tool — keep off Git
+# Local Support Insight inputs and state
+/zaapi-conversations/
+/zaapi-analytics/
+/zaapi-kb/
+/zaapi-scenarios/
+/zaapi-contacts/
+/data/
 *.db
-*.db-shm
-*.db-wal
-.env.local
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+.env
+.env.*
+!.env.example
+/node_modules/
+/.next/
+/next-env.d.ts
+*.tsbuildinfo
+.DS_Store
+/.omc/

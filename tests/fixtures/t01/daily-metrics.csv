@@ -1,0 +1,2 @@
+report_date,account_name,channel,total_tickets,ai_messages_sent,human_resolved_tickets,ai_full_resolved_tickets,ai_partial_resolved_tickets,ai_full_resolution_rate,ai_partial_resolution_rate
+16-11-2026,Synthetic,widget,1,0,0,0,0,0.00%,0.00%

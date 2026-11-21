@@ -1,0 +1,3 @@
+ticket_id,channel,month,reason,outcome,human_replied
+A,widget,2026-11,order_status,unresolved,false
+B,widget,2026-11,empty,no_reply,false

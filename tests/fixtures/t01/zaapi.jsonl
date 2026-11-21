@@ -1,0 +1,4 @@
+{"ticketId":"A","ticketNumber":"ZA-A","channel":"widget","openedAt":"2026-11-15T15:59:00Z","closedAt":null,"isOpen":true,"aiSummary":"Old snapshot","transcript":[{"who":"customer","name":null,"at":"2026-11-15T15:59:00Z","text":"Old message","images":[]}]}
+{"ticketId":"B","ticketNumber":"ZA-B","channel":"widget","openedAt":"2026-11-15T16:00:00Z","closedAt":null,"isOpen":true,"aiSummary":null,"transcript":[]}
+{"ticketId":"A","ticketNumber":"ZA-A","channel":"widget","openedAt":"2026-11-15T15:59:00Z","closedAt":null,"isOpen":true,"aiSummary":"Email test@example.invalid","transcript":[{"who":"customer","name":null,"at":"2026-11-15T15:59:00Z","text":"Can I track my book?","images":["https://example.invalid/synthetic"]}]}
+{"ticketId":"A",

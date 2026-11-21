@@ -40,3 +40,13 @@ Support Insight is a local, single-user tool for the Photobook support lead. It 
 3. Time-box spikes and record the findings. Move any proposed implementation to a fresh branch from the target base.
 4. Keep commits scoped. If the base moves, rebase unpublished work or merge the base into a shared branch. Preserve shared history.
 5. With explicit authorization, push the named branch and open a pull request against its base. Merge into `main` through a pull request after required checks and reviews pass. Delete the task branch after merge with owner approval.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
