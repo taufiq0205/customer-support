@@ -27,8 +27,11 @@ export interface OutboundReply {
 }
 
 // Zaapi returns no message id; its outbound copy arrives later via the message.sent webhook.
+// unconfirmed: the request may have reached the platform (timeout, network error, HTTP 5xx); only the echo webhook settles it.
+// failed: the platform definitely did not send (missing key, invalid input, HTTP 4xx).
 export type SendResult =
   | { status: 'sent'; externalMessageId: string | null }
+  | { status: 'unconfirmed'; errorMessage: string }
   | { status: 'failed'; errorMessage: string }
 
 export interface WebhookVerificationResult {

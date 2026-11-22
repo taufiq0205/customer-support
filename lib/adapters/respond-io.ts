@@ -116,7 +116,7 @@ export const respondIoAdapter: PlatformAdapter = {
     ]
   },
 
-  // The caller must not auto-retry a failure: respond.io has no idempotency key, so a retry can double-send.
+  // The caller must not auto-retry an unconfirmed send: respond.io has no idempotency key, so a retry can double-send.
   // shortcut: no channelId is sent, so respond.io uses the contact's last interacted channel; pass it once OutboundReply carries one
   async sendReply(reply): Promise<SendResult> {
     const apiKey = process.env.RESPOND_IO_API_KEY
@@ -134,12 +134,12 @@ export const respondIoAdapter: PlatformAdapter = {
         signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
       })
       // The error body's message may echo input, so report only the status.
-      if (!res.ok) return { status: 'failed', errorMessage: `respond.io returned HTTP ${res.status}` }
+      if (!res.ok) return { status: res.status >= 500 ? 'unconfirmed' : 'failed', errorMessage: `respond.io returned HTTP ${res.status}` }
       const json: unknown = await res.json().catch(() => null)
       return { status: 'sent', externalMessageId: toId(pick(json, RESPOND_IO_FIELDS.sentMessageId)) }
     } catch (err) {
       const timedOut = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
-      return { status: 'failed', errorMessage: timedOut ? 'respond.io request timed out' : 'respond.io request failed' }
+      return { status: 'unconfirmed', errorMessage: timedOut ? 'respond.io request timed out' : 'respond.io request failed' }
     }
   },
 }

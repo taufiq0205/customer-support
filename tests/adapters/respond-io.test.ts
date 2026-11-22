@@ -272,16 +272,24 @@ describe('respondIoAdapter.sendReply', () => {
     expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'sent', externalMessageId: null })
   })
 
-  it.each([400, 401, 404, 429, 449, 500])('returns failed on HTTP %i without leaking the body', async (status) => {
+  it.each([
+    [400, 'failed'],
+    [401, 'failed'],
+    [404, 'failed'],
+    [429, 'failed'],
+    [449, 'failed'],
+    [500, 'unconfirmed'],
+    [502, 'unconfirmed'],
+  ])('maps HTTP %i to %s without leaking the body', async (status, outcome) => {
     vi.stubGlobal('fetch', respond(status, { code: status, message: 'echoed Synthetic reply' }))
-    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'failed', errorMessage: `respond.io returned HTTP ${status}` })
+    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: outcome, errorMessage: `respond.io returned HTTP ${status}` })
   })
 
-  it('returns failed when fetch rejects or times out', async () => {
+  it('returns unconfirmed when fetch rejects or times out, since respond.io may have sent it', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')))
-    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'failed', errorMessage: 'respond.io request failed' })
+    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'unconfirmed', errorMessage: 'respond.io request failed' })
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('timed out', 'TimeoutError')))
-    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'failed', errorMessage: 'respond.io request timed out' })
+    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'unconfirmed', errorMessage: 'respond.io request timed out' })
   })
 
   it.each([

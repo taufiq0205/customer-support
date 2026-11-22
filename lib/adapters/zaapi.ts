@@ -187,7 +187,7 @@ export const zaapiAdapter: PlatformAdapter = {
     ]
   },
 
-  // The caller must not auto-retry a failure: Zaapi has no idempotency key, so a retry can double-send.
+  // The caller must not auto-retry an unconfirmed send: Zaapi has no idempotency key, so a retry can double-send.
   async sendReply(reply): Promise<SendResult> {
     const apiKey = process.env.ZAAPI_API_KEY
     if (!apiKey) return { status: 'failed', errorMessage: 'ZAAPI_API_KEY is not set' }
@@ -205,11 +205,11 @@ export const zaapiAdapter: PlatformAdapter = {
         signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
       })
       // The error body's message may echo input, so report only the status.
-      if (!res.ok) return { status: 'failed', errorMessage: `Zaapi returned HTTP ${res.status}` }
+      if (!res.ok) return { status: res.status >= 500 ? 'unconfirmed' : 'failed', errorMessage: `Zaapi returned HTTP ${res.status}` }
       return { status: 'sent', externalMessageId: null }
     } catch (err) {
       const timedOut = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
-      return { status: 'failed', errorMessage: timedOut ? 'Zaapi request timed out' : 'Zaapi request failed' }
+      return { status: 'unconfirmed', errorMessage: timedOut ? 'Zaapi request timed out' : 'Zaapi request failed' }
     }
   },
 }
