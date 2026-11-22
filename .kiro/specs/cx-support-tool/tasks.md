@@ -194,25 +194,25 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - `removeClient` stops delivery to that client
     - _Requirements: 1.2, 9.3_
 
-- [ ] 10. Build webhook ingestion routes
-  - [ ] 10.1 Create `app/api/webhooks/zaapi/route.ts`
+- [x] 10. Build webhook ingestion routes
+  - [x] 10.1 Create `app/api/webhooks/zaapi/route.ts`
     - `POST`: immediately write `webhookLog` entry (timestamp, platform, `verified: false`)
     - Call `ZaapiAdapter.verifyWebhook(req)`; on failure update log (`verified: false, rejected`), return 401 — no payload stored
     - On success call `ZaapiAdapter.parseWebhook`, then `ConversationSvc.ingest`; update log (`verified: true, processed`); return 200
     - On processing error update log (`failed`); return 500
     - _Requirements: 2.2, 10.5, 11.4_
 
-  - [ ] 10.2 Create `app/api/webhooks/respond-io/route.ts`
+  - [x] 10.2 Create `app/api/webhooks/respond-io/route.ts`
     - Mirror the Zaapi webhook route using `RespondAdapter`
     - _Requirements: 3.2, 10.5, 11.4_
 
-  - [ ]* 10.3 Write integration test for webhook ingestion
+  - [x]* 10.3 Write integration test for webhook ingestion
     - Mock Zaapi HMAC signature; call the route handler with a fixture payload; assert DB state (conversation + message inserted) and SSE event emitted
     - Call with an invalid signature; assert 401, no DB row, no SSE event
     - Mirror for respond.io
     - _Requirements: 2.2, 3.2, 10.5_
 
-  - [ ]* 10.4 Write property test — Property 18: invalid webhook signatures always rejected
+  - [x]* 10.4 Write property test — Property 18: invalid webhook signatures always rejected
     - **Property 18: Invalid webhook signatures are always rejected**
     - **Validates: Requirements 10.5**
     - Generate arbitrary payloads with mismatched signatures; assert all return 401 and nothing is persisted
