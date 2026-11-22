@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AdapterPayloadError } from '@/lib/adapters/lenient'
 import { ZAAPI_SIGNATURE_HEADER, ZaapiLookupError, ZaapiPayloadError, zaapiAdapter } from '@/lib/adapters/zaapi'
 
 const SECRET = 'synthetic-webhook-secret'
@@ -92,15 +93,26 @@ describe('zaapiAdapter.verifyWebhook', () => {
     ['missing t', (s: string) => s.slice(s.indexOf('v1='))],
     ['non-integer t', (s: string) => s.replace(`t=${NOW_S}`, `t=${NOW_S}.5`)],
     ['negative t', (s: string) => s.replace(`t=${NOW_S}`, `t=-${NOW_S}`)],
+    ['truncated v1', (s: string) => s.slice(0, -10)],
+    ['extra hex', (s: string) => `${s}00`],
+    ['leading junk', (s: string) => `x${s}`],
+    ['non-hex v1', (s: string) => s.replace('v1=', 'v1=zz')],
+    ['a second t', (s: string) => `${s},t=${NOW_S}`],
+    ['a part without =', (s: string) => `${s},junk`],
+    ['only wrong v1 values', (s: string) => `${s.replace(/v1=.*$/, `v1=${'0'.repeat(64)}`)},v1=${'1'.repeat(64)}`],
+    ['a non-hex v1 beside a valid one', (s: string) => `${s},v1=not-hex`],
+  ])('rejects a malformed header (%s)', async (_, mutate) => {
+    expect(await zaapiAdapter.verifyWebhook(webhook(body, mutate(sign(body))))).toEqual({ valid: false, rawPayload: body })
+  })
+
+  it.each([
     ['space after comma', (s: string) => s.replace(',', ', ')],
     ['reversed order', (s: string) => `${s.split(',')[1]},${s.split(',')[0]}`],
     ['uppercase hex', (s: string) => s.replace(/v1=(.*)$/, (_, h: string) => `v1=${h.toUpperCase()}`)],
-    ['truncated v1', (s: string) => s.slice(0, -10)],
-    ['extra hex', (s: string) => `${s}00`],
-    ['trailing field', (s: string) => `${s},v0=abc`],
-    ['leading junk', (s: string) => `x${s}`],
-  ])('rejects a malformed header (%s)', async (_, mutate) => {
-    expect(await zaapiAdapter.verifyWebhook(webhook(body, mutate(sign(body))))).toEqual({ valid: false, rawPayload: body })
+    ['an unknown extra key', (s: string) => `${s},v0=abc`],
+    ['a rotated second v1', (s: string) => s.replace('v1=', `v1=${'0'.repeat(64)},v1=`)],
+  ])('accepts a header variant (%s)', async (_, mutate) => {
+    expect(await zaapiAdapter.verifyWebhook(webhook(body, mutate(sign(body))))).toEqual({ valid: true, rawPayload: body })
   })
 
   it('rejects a missing header', async () => {
@@ -215,7 +227,10 @@ describe('zaapiAdapter.parseWebhook', () => {
     ['a non-object message', event('hello')],
     ['a missing id', event({ ...inboundMessage, id: undefined })],
     ['an empty id', event({ ...inboundMessage, id: '' })],
-    ['a missing conversationId', event({ ...inboundMessage, conversationId: undefined })],
+    [
+      'a conversationId missing from message and envelope',
+      JSON.stringify({ eventType: 'message.received', data: { message: { ...inboundMessage, conversationId: undefined } } }),
+    ],
     ['a lone-surrogate conversationId', event({ ...inboundMessage, conversationId: '\uD800' })],
     ['a missing messageDirection', event({ ...inboundMessage, messageDirection: undefined })],
     ['a bad messageDirection', event({ ...inboundMessage, messageDirection: 'sideways' })],
@@ -252,6 +267,103 @@ describe('zaapiAdapter.parseWebhook', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
     await expect(zaapiAdapter.parseWebhook(event(inboundMessage))).rejects.toBeInstanceOf(ZaapiLookupError)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('zaapiAdapter.parseWebhook variants', () => {
+  beforeEach(() => vi.stubEnv('ZAAPI_API_KEY', API_KEY))
+  const base = { ...inboundMessage, messageCategory: undefined, messageType: undefined }
+
+  it.each([
+    ['a numeric id', { id: 1001 }, { externalId: '1001' }],
+    ['snake_case fields', { id: undefined, message_id: 'm-9', sent_at: '2026-11-20T09:15:00Z', sentAt: undefined }, { externalId: 'm-9' }],
+    ['messageId', { id: undefined, messageId: 'm-8' }, { externalId: 'm-8' }],
+    ['conversation.id', { conversationId: undefined, conversation: { id: 'conv-001' } }, { externalConversationId: 'conv-001' }],
+    ['seconds timestamp', { sentAt: undefined, timestamp: 1795000000 }, { sentAt: new Date(1795000000000) }],
+    ['ms timestamp', { sentAt: 1795000000123 }, { sentAt: new Date(1795000000123) }],
+    ['numeric-string timestamp', { sentAt: '1795000000' }, { sentAt: new Date(1795000000000) }],
+    ['ISO date createdAt', { sentAt: undefined, createdAt: '2026-11-20' }, { sentAt: new Date('2026-11-20') }],
+    ['direction incoming', { messageDirection: undefined, direction: 'incoming' }, { direction: 'inbound' }],
+    ['direction OUTGOING', { messageDirection: 'OUTGOING' }, { direction: 'outbound', senderName: null }],
+    ['traffic received', { messageDirection: undefined, traffic: 'received' }, { direction: 'inbound' }],
+    ['body instead of text', { text: undefined, body: 'Synthetic body' }, { body: 'Synthetic body' }],
+    ['content.text', { text: undefined, content: { text: 'Synthetic nested' } }, { body: 'Synthetic nested' }],
+    ['a non-string text', { text: { rich: true } }, { body: null }],
+    ['an attachments array', { attachments: [{ type: 'file' }] }, { hasAttachment: true }],
+    ['messageType sticker', { messageType: 'Sticker' }, { hasAttachment: true }],
+    ['messageType text', { messageType: 'text', media: [] }, { hasAttachment: false }],
+    ['missing messageCategory', {}, { externalId: 'msg-001' }],
+    ['messageCategory message', { messageCategory: 'message' }, { externalId: 'msg-001' }],
+  ])('accepts %s', async (_, overrides, expected) => {
+    vi.stubGlobal('fetch', lookupResponse(conversation))
+    const [m] = await zaapiAdapter.parseWebhook(event({ ...base, ...overrides }))
+    expect(m).toMatchObject(expected)
+  })
+
+  it.each(['message.created', 'MESSAGE_RECEIVED', 'message_outgoing'])('treats event type %s as a message event', async (eventType) => {
+    vi.stubGlobal('fetch', lookupResponse(conversation))
+    expect(await zaapiAdapter.parseWebhook(event(base, eventType))).toHaveLength(1)
+  })
+
+  it('falls back to the envelope conversationId', async () => {
+    vi.stubGlobal('fetch', lookupResponse(conversation))
+    const [m] = await zaapiAdapter.parseWebhook(event({ ...base, conversationId: undefined }))
+    expect(m.externalConversationId).toBe('conv-001')
+  })
+
+  it.each(['system', 'Note', 'internal_comment', 'comment'])('returns [] without fetching for messageCategory %s', async (messageCategory) => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    expect(await zaapiAdapter.parseWebhook(event({ ...base, messageCategory }))).toEqual([])
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['WhatsApp', 'whatsapp'],
+    ['whatsapp-business', 'whatsapp'],
+    ['facebook_messenger', 'facebook'],
+    ['IG', 'instagram'],
+    ['LINE', 'line'],
+    ['Lazada Chat', 'lazada'],
+  ])('maps lookup channel %s to %s', async (spelling, channel) => {
+    vi.stubGlobal('fetch', lookupResponse({ ...conversation, channel: spelling }))
+    expect((await zaapiAdapter.parseWebhook(event(base)))[0].channel).toBe(channel)
+  })
+
+  it.each([
+    ['data.items', { items: [conversation] }, {}],
+    ['data.conversations', { conversations: [conversation] }, {}],
+    ['data.data with a numeric id', { data: [{ id: 6 }, { ...conversation, id: 7 }] }, { conversationId: 7 }],
+    ['platform and name fields', { id: 'conv-001', platform: 'whatsapp', name: 'Test Customer' }, {}],
+  ])('reads lookup records under %s', async (_, data, overrides) => {
+    vi.stubGlobal('fetch', lookupResponse(data))
+    const [m] = await zaapiAdapter.parseWebhook(event({ ...base, ...overrides }))
+    expect(m).toMatchObject({ channel: 'whatsapp', senderName: 'Test Customer' })
+  })
+
+  it('throws ZaapiLookupError with field channel for online_store', async () => {
+    vi.stubGlobal('fetch', lookupResponse({ ...conversation, channel: 'online_store' }))
+    const err = await zaapiAdapter.parseWebhook(event(base)).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(ZaapiLookupError)
+    expect((err as ZaapiLookupError).field).toBe('channel')
+  })
+
+  it.each([
+    ['sentAt', { sentAt: 'not a date' }],
+    ['sentAt', { sentAt: -5 }],
+    ['sentAt', { sentAt: undefined }],
+    ['id', { id: -1 }],
+    ['id', { id: '   ' }],
+    ['direction', { messageDirection: 'sideways' }],
+  ])('names the broken field %s in ZaapiPayloadError', async (field, overrides) => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    const err = await zaapiAdapter.parseWebhook(event({ ...base, ...overrides })).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(ZaapiPayloadError)
+    expect(err).toBeInstanceOf(AdapterPayloadError)
+    expect((err as ZaapiPayloadError).field).toBe(field)
+    expect((err as Error).message).not.toContain('synthetic order')
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 })
