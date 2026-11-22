@@ -2,7 +2,7 @@
 
 import { BellIcon, LogOutIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Session } from '@/lib/auth/session'
@@ -36,21 +36,23 @@ const refreshes = (type: SSEEvent['type']) => type.startsWith('conversation.') |
 export function AppProvider({ session, children }: { session: Session; children: ReactNode }) {
   const router = useRouter()
   const [unread, setUnread] = useState<Notification[]>([])
+  // A GET already in flight when markRead runs would bring these back.
+  const readIds = useRef(new Set<string>())
 
   const loadNotifications = useCallback(() => {
     fetch('/api/notifications')
       .then((res) => (res.ok ? (res.json() as Promise<Notification[]>) : null))
-      .then((list) => list && setUnread(list))
+      .then((list) => list && setUnread(list.filter((n) => !readIds.current.has(n.id))))
       .catch(() => {})
   }, [])
 
   const markRead = useCallback((ids: string[]) => {
+    for (const id of ids) readIds.current.add(id)
     setUnread((current) => current.filter((n) => !ids.includes(n.id)))
     fetch('/api/notifications', { method: 'PATCH', body: JSON.stringify({ ids }) }).catch(() => {})
   }, [])
 
   useEffect(() => {
-    loadNotifications()
     const source = new EventSource('/api/events')
     let timer: ReturnType<typeof setTimeout> | undefined
     let dropped = false
@@ -71,11 +73,10 @@ export function AppProvider({ session, children }: { session: Session; children:
       dropped = true
     }
     // EventSource reconnects on its own; refetch to fill whatever was missed while it was down.
+    // Notifications load on every open, the first included, so none land between the fetch and the stream.
     source.onopen = () => {
-      if (dropped) {
-        refresh()
-        loadNotifications()
-      }
+      loadNotifications()
+      if (dropped) refresh()
       dropped = false
     }
     return () => {

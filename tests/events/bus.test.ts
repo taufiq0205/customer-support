@@ -81,6 +81,8 @@ describe('GET /api/events', () => {
     expect(res.headers.get('content-type')).toBe('text/event-stream')
     expect(res.headers.get('cache-control')).toBe('no-cache')
     const reader = res.body!.getReader()
+    // The first chunk flushes the headers so EventSource.onopen fires at once.
+    expect(await nextText(reader)).toBe(': keepalive\n\n')
     emit(event('c1'))
     expect(parse(await nextText(reader))).toEqual([event('c1')])
     await reader.cancel()
@@ -89,6 +91,7 @@ describe('GET /api/events', () => {
   it('sends a keepalive comment every 30 seconds', async () => {
     vi.useFakeTimers()
     const reader = (await open()).body!.getReader()
+    await nextText(reader) // connect comment
     vi.advanceTimersByTime(30_000)
     expect(await nextText(reader)).toBe(': keepalive\n\n')
     await reader.cancel()
@@ -98,6 +101,7 @@ describe('GET /api/events', () => {
     vi.useFakeTimers()
     const abort = new AbortController()
     const reader = (await open(abort.signal)).body!.getReader()
+    await nextText(reader) // connect comment
     abort.abort()
     vi.advanceTimersByTime(30_000)
     expect(() => emit(event('c1'))).not.toThrow()

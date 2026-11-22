@@ -19,6 +19,8 @@ export async function GET(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       addClient(id, controller, session.userId, session.role)
+      // Headers only flush with the first chunk; without it EventSource.onopen waits for the first event.
+      controller.enqueue(KEEPALIVE)
       timer = setInterval(() => {
         try { controller.enqueue(KEEPALIVE) } catch { cleanup() }
       }, KEEPALIVE_MS)
