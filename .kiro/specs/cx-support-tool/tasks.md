@@ -218,7 +218,7 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate arbitrary payloads with mismatched signatures; assert all return 401 and nothing is persisted
     - _Requirements: 10.5_
 
-- [ ] 11. Checkpoint — Verify webhook-to-inbox tracer bullet
+- [x] 11. Checkpoint — Verify webhook-to-inbox tracer bullet
   - Post a fixture webhook to `/api/webhooks/zaapi`; confirm the conversation appears in the DB and the SSE bus emits the event.
   - Ensure all tests pass, ask the user if questions arise.
 
