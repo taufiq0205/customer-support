@@ -222,27 +222,27 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
   - Post a fixture webhook to `/api/webhooks/zaapi`; confirm the conversation appears in the DB and the SSE bus emits the event.
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Build conversations API routes
-  - [ ] 12.1 Create `app/api/conversations/route.ts`
+- [x] 12. Build conversations API routes
+  - [x] 12.1 Create `app/api/conversations/route.ts`
     - `GET`: parse query params (`platform`, `channel`, `status`, `assignedTo`, `search`, `page`); delegate to `ConversationSvc.getConversations`; return paginated JSON
     - Agents see only their conversations or unassigned; supervisors see all (enforced inside `getConversations`)
     - _Requirements: 1.1, 1.4, 1.5, 1.6, 9.3, 9.4_
 
-  - [ ] 12.2 Create `app/api/conversations/[id]/route.ts`
+  - [x] 12.2 Create `app/api/conversations/[id]/route.ts`
     - `GET`: delegate to `ConversationSvc.getConversation`; return conversation + messages; enforce ownership (return 403 if agent tries to read another agent's conversation)
     - _Requirements: 1.7, 10.4_
 
-  - [ ] 12.3 Create `app/api/conversations/[id]/status/route.ts`
+  - [x] 12.3 Create `app/api/conversations/[id]/status/route.ts`
     - `PATCH`: parse `{ toStatus, reason?, snoozedUntil? }`; call `ConversationSvc.changeStatus`; return updated conversation
     - _Requirements: 7.1, 7.2, 7.4, 7.5_
 
-  - [ ]* 12.4 Write property test — Property 17: agent cannot read another agent's conversations
+  - [x]* 12.4 Write property test — Property 17: agent cannot read another agent's conversations
     - **Property 17: Agent cannot read another agent's conversations**
     - **Validates: Requirements 10.4**
     - Generate pairs of agents and conversations assigned to one of them; call the detail endpoint as the other agent; assert 403 or 404, never the conversation data
     - _Requirements: 10.4_
 
-  - [ ]* 12.5 Write property test — Property 1: inbox items contain all required fields
+  - [x]* 12.5 Write property test — Property 1: inbox items contain all required fields
     - **Property 1: Inbox items contain all required fields**
     - **Validates: Requirements 1.4**
     - Generate arbitrary conversations; call the list endpoint; assert every returned item has `customerName` or `customerIdentifier`, `channel`, `platform`, `lastMessageAt`, and `lastMessagePreview`
