@@ -128,6 +128,34 @@ describe('thread page', () => {
     expect(html).not.toContain('>Delivered<') // inbound messages carry no delivery badge
   })
 
+  it('shows the compose area and offers retry only on failed or unconfirmed outbound replies', async () => {
+    const conv = insertConversation({})
+    insertMessage(conv.id, { body: 'customer failed', status: 'failed' })
+    insertMessage(conv.id, { body: 'reply failed', direction: 'outbound', status: 'failed' })
+    insertMessage(conv.id, { body: 'reply unconfirmed', direction: 'outbound', status: 'unconfirmed' })
+    insertMessage(conv.id, { body: 'reply pending', direction: 'outbound', status: 'pending' })
+    insertMessage(conv.id, { body: 'reply sent', direction: 'outbound', status: 'sent' })
+
+    const html = await thread(conv.id)
+    expect(html).toMatch(/<textarea[^>]*aria-label="Reply"/)
+    expect(html).toContain('>Send<')
+    expect(html.match(/>Retry</g)).toHaveLength(1)
+    expect(html.match(/>Resend</g)).toHaveLength(1)
+    expect(html.indexOf('>Retry<')).toBeGreaterThan(html.indexOf('reply failed'))
+    expect(html.indexOf('>Retry<')).toBeLessThan(html.indexOf('reply unconfirmed'))
+    expect(html.indexOf('>Resend<')).toBeLessThan(html.indexOf('reply pending'))
+  })
+
+  it('offers retry only on the newest copy once a reply has been resent', async () => {
+    const conv = insertConversation({})
+    insertMessage(conv.id, { body: 'same reply', direction: 'outbound', status: 'unconfirmed' })
+    insertMessage(conv.id, { body: 'same reply', direction: 'outbound', status: 'failed' })
+
+    const html = await thread(conv.id)
+    expect(html).not.toContain('>Resend<')
+    expect(html.match(/>Retry</g)).toHaveLength(1)
+  })
+
   it('returns not found for a conversation the agent cannot access', async () => {
     const other = insertConversation({ assignedAgentId: 'agent-b' })
     user = agent('agent-a')

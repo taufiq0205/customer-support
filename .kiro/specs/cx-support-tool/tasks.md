@@ -283,14 +283,15 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Render both pages with seeded conversation data; assert expected elements are present (conversation items, channel labels, message order)
     - _Requirements: 1.4, 1.7_
 
-- [ ] 15. Build compose area and reply UI
-  - [ ] 15.1 Create `components/compose/ComposeArea.tsx` (Client Component)
+- [x] 15. Build compose area and reply UI
+  - [x] 15.1 Create `components/compose/ComposeArea.tsx` (Client Component)
     - Text area, send button, canned response trigger (`/` prefix), pending state while send is in progress
+    - The canned response `/` picker lands in 21.3, once the canned response API from task 21 exists
     - Calls `POST /api/conversations/[id]/messages`; shows pending indicator then updates to sent/failed
     - Renders clear error on failure with retry action
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 15.2 Integrate `ComposeArea` into the conversation thread page
+  - [x] 15.2 Integrate `ComposeArea` into the conversation thread page
     - Wire up the composed reply to the message send route; update the thread on SSE `message.created` event
     - _Requirements: 5.1, 5.2_
 
