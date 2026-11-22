@@ -5,13 +5,14 @@ import type { Session } from '@/lib/auth/session'
 process.env.DATABASE_URL = ':memory:'
 
 export const { db, runMigrations } = await import('@/lib/db')
-export const { users, conversations, conversationHistory, messages, aiRequestLog } = await import('@/lib/db/schema')
+export const { users, conversations, conversationHistory, messages, aiRequestLog, notifications } = await import('@/lib/db/schema')
 const { createSessionToken, SESSION_COOKIE } = await import('@/lib/auth/session')
 const listRoute = await import('@/app/api/conversations/route')
 const detailRoute = await import('@/app/api/conversations/[id]/route')
 const statusRoute = await import('@/app/api/conversations/[id]/status/route')
 const messagesRoute = await import('@/app/api/conversations/[id]/messages/route')
 const suggestRoute = await import('@/app/api/conversations/[id]/ai-suggest/route')
+const assignRoute = await import('@/app/api/conversations/[id]/assign/route')
 
 export type ConvRow = typeof conversations.$inferInsert
 
@@ -40,6 +41,7 @@ export function resetTables() {
   db.delete(conversationHistory).run()
   db.delete(messages).run()
   db.delete(aiRequestLog).run()
+  db.delete(notifications).run()
   db.delete(conversations).run()
 }
 
@@ -96,4 +98,11 @@ export async function postSuggest(session: Session | null, id: string) {
   return suggestRoute.POST(new Request(`${BASE}/${id}/ai-suggest`, { method: 'POST', headers: await headers(session) }), {
     params: Promise.resolve({ id }),
   })
+}
+
+export async function postAssign(session: Session | null, id: string, body: string) {
+  return assignRoute.POST(
+    new Request(`${BASE}/${id}/assign`, { method: 'POST', body, headers: await headers(session) }),
+    { params: Promise.resolve({ id }) },
+  )
 }

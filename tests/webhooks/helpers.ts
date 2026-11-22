@@ -6,7 +6,8 @@ import type { SSEEvent } from '@/lib/events/types'
 process.env.DATABASE_URL = ':memory:'
 
 export const { db, runMigrations } = await import('@/lib/db')
-export const { conversations, conversationHistory, messages, webhookLog } = await import('@/lib/db/schema')
+export const { conversations, conversationHistory, messages, webhookLog, notifications, assignmentRules, roundRobinState, users } =
+  await import('@/lib/db/schema')
 const { addClient, removeClient } = await import('@/lib/events/bus')
 export const zaapiRoute = await import('@/app/api/webhooks/zaapi/route')
 export const respondIoRoute = await import('@/app/api/webhooks/respond-io/route')
@@ -78,8 +79,11 @@ export function stubWebhookEnv() {
 export function resetTables() {
   db.delete(conversationHistory).run()
   db.delete(messages).run()
+  db.delete(notifications).run()
   db.delete(conversations).run()
   db.delete(webhookLog).run()
+  db.delete(assignmentRules).run()
+  db.delete(roundRobinState).run()
 }
 
 // Collects what a connected supervisor browser would receive.

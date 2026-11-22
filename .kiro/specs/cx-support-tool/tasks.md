@@ -335,36 +335,36 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
   - Confirm a full reply round-trip (compose → send → SSE update) and AI suggestion (request → redacted prompt → draft inserted) both work end-to-end with synthetic fixtures.
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 19. Implement conversation assignment service and routes
-  - [ ] 19.1 Create `lib/services/assignment.ts`
+- [x] 19. Implement conversation assignment service and routes
+  - [x] 19.1 Create `lib/services/assignment.ts`
     - `assign(conversationId, agentId, assignedBy, session)`: update `conversations.assignedAgentId`; write `conversationHistory`; create notification for new assignee; emit SSE `conversation.assigned` event
     - `configureAutoAssign(strategy, manualAgentId?, updatedBy)`: upsert `assignmentRules`
     - `autoAssign(conversationId)`: read active rule; if `round_robin`, read and advance `roundRobinState`; if `manual`, use the configured agent; call `assign`
     - _Requirements: 4.1, 4.2, 4.4, 4.5, 4.6, 4.7_
 
-  - [ ] 19.2 Create `app/api/conversations/[id]/assign/route.ts`
+  - [x] 19.2 Create `app/api/conversations/[id]/assign/route.ts`
     - `POST`: parse `{ agentId }`; supervisors can assign any conversation; agents can self-assign unassigned conversations; call `AssignmentSvc.assign`
     - _Requirements: 4.1, 4.4, 9.4_
 
-  - [ ]* 19.3 Write property test — Property 5: assigned conversation reflects assigned agent
+  - [x]* 19.3 Write property test — Property 5: assigned conversation reflects assigned agent
     - **Property 5: Assigned conversation reflects assigned agent**
     - **Validates: Requirements 4.1, 4.4**
     - For any open conversation and any active agent, after executing `assign`, assert `assignedAgentId` equals the agent's ID
     - _Requirements: 4.1, 4.4_
 
-  - [ ]* 19.4 Write property test — Property 6: assignment produces notification for assignee
+  - [x]* 19.4 Write property test — Property 6: assignment produces notification for assignee
     - **Property 6: Assignment produces a notification for the assignee**
     - **Validates: Requirements 4.2**
     - After every `assign` call where the new assignee differs from the previous one, assert a notification row exists with `userId = newAssigneeId` and `type = 'assigned'`
     - _Requirements: 4.2_
 
-  - [ ]* 19.5 Write property test — Property 7: unassigned conversations appear in queue
+  - [x]* 19.5 Write property test — Property 7: unassigned conversations appear in queue
     - **Property 7: Unassigned conversations appear in queue**
     - **Validates: Requirements 4.5**
     - For any conversation with `assignedAgentId = null` and `status = 'open'`, assert the queue query includes it
     - _Requirements: 4.5_
 
-  - [ ]* 19.6 Write property test — Property 8: round-robin distributes conversations evenly
+  - [x]* 19.6 Write property test — Property 8: round-robin distributes conversations evenly
     - **Property 8: Round-robin assignment distributes conversations evenly**
     - **Validates: Requirements 4.6**
     - Generate N agents (1–20) and M calls (1–100); assert no agent receives more than ⌈M/N⌉ assignments
