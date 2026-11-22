@@ -15,12 +15,16 @@ function secretKey(): Uint8Array {
   return new TextEncoder().encode(secret)
 }
 
-export async function createSession(userId: string, role: Role): Promise<string> {
-  const jwt = await new SignJWT({ userId, role })
+export function createSessionToken(userId: string, role: Role): Promise<string> {
+  return new SignJWT({ userId, role })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
     .sign(secretKey())
+}
+
+export async function createSession(userId: string, role: Role): Promise<string> {
+  const jwt = await createSessionToken(userId, role)
   return `${SESSION_COOKIE}=${jwt}; ${ATTRS}; Max-Age=${SESSION_TTL_SECONDS}`
 }
 
