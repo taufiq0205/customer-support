@@ -69,21 +69,21 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - `passwords.ts` hash/compare symmetry and negative case
     - _Requirements: 9.5, 9.6_
 
-- [ ] 4. Build login API route and login page (tracer-bullet auth flow)
-  - [ ] 4.1 Create `app/api/auth/login/route.ts`
+- [x] 4. Build login API route and login page (tracer-bullet auth flow)
+  - [x] 4.1 Create `app/api/auth/login/route.ts`
     - `POST`: parse `{ username, password }` from JSON body; query `users` table; call `passwords.verify`; on success call `createSession` and set the cookie; return 200 with `{ userId, role }`; on failure return 401
     - _Requirements: 9.1_
 
-  - [ ] 4.2 Create `app/api/auth/logout/route.ts`
+  - [x] 4.2 Create `app/api/auth/logout/route.ts`
     - `POST`: call `deleteSession()`, return 200
     - _Requirements: 9.1_
 
-  - [ ] 4.3 Create the login page at `app/(auth)/login/page.tsx`
+  - [x] 4.3 Create the login page at `app/(auth)/login/page.tsx`
     - Server Component that renders a login form; form uses a Server Action (`'use server'`) to call the login logic and redirect on success
     - Display validation errors inline; never expose stack traces
     - _Requirements: 9.1_
 
-  - [ ] 4.4 Seed one supervisor and one agent user via a `scripts/seed-users.ts` script
+  - [x] 4.4 Seed one supervisor and one agent user via a `scripts/seed-users.ts` script
     - Accepts `--username`, `--password`, `--role` flags; hashes the password and inserts into `users`; never commits credentials
     - _Requirements: 9.1, 9.5_
 
