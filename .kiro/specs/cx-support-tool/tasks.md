@@ -252,7 +252,7 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
   - [x] 13.1 Create `app/api/conversations/[id]/messages/route.ts`
     - `POST`: read session; read conversation (enforce ownership); call `MessageSvc.storeOutbound`; return 202
     - After response: call platform adapter `sendReply`; call `MessageSvc.updateMessageStatus` with result (`sent` or `failed`); emit SSE event
-    - On timeout (30 s): mark `failed`; allow agent retry
+    - On timeout (30 s), network error, or HTTP 5xx: mark `unconfirmed`; a resend of the same body needs `confirmResend: true`, else 409
     - _Requirements: 5.2, 5.3, 5.4, 2.3, 2.4, 3.3, 3.4_
 
   - [x]* 13.2 Write integration tests for message send
