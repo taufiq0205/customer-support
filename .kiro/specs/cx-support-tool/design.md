@@ -828,7 +828,7 @@ Focus on pure functions and business logic with no external dependencies:
 - **`RedactionSvc.redact()`**: fixtures covering each PII type, mixed inputs, and strings with no PII (should be unchanged).
 - **Canned response shortcode filter**: prefix matching across various inputs.
 - **Placeholder substitution**: `{{customer_name}}` replacement, multiple occurrences, no placeholder case.
-- **Status transition logic**: valid and invalid transitions (e.g., `resolved → open` should require a new message event).
+- **Status transition logic**: valid and invalid transitions (e.g., `resolved → snoozed` is invalid; agents may reopen `resolved → open` manually, and an inbound message also reopens it).
 - **Round-robin state machine**: evenly distributes across N agents over M calls.
 - **Report aggregation functions**: total counts, resolved counts, date boundary edge cases (ISO week, timezone offsets for Malaysia time UTC+8).
 - **JWT session**: encrypt/decrypt round trip, expiry detection.
