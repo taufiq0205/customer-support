@@ -172,7 +172,7 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate N sequential status transitions; assert `conversationHistory` contains at least N rows for that conversation
     - _Requirements: 7.4_
 
-- [ ] 9. Implement SSE event bus and /api/events route
+- [x] 9. Implement SSE event bus and /api/events route
   - [x] 9.1 Create `lib/events/types.ts`
     - Define and export `SSEEventType` union and `SSEEvent` interface as specified in the design
     - _Requirements: 1.2, 11.2_
@@ -182,13 +182,13 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Implement `addClient`, `removeClient`, `emit(event, visibleToUserId?)` — supervisors receive all events; agents receive only events for accessible conversations
     - _Requirements: 1.2, 9.3, 11.2_
 
-  - [ ] 9.3 Create `app/api/events/route.ts`
+  - [x] 9.3 Create `app/api/events/route.ts`
     - `GET`: verify session via `getSession`; return 401 if absent
     - Return a `ReadableStream` response with `Content-Type: text/event-stream`
     - Register controller with `addClient`; send 30-second keepalive comments; remove on stream close
     - _Requirements: 1.2, 11.2_
 
-  - [ ]* 9.4 Write unit tests for the SSE bus
+  - [x]* 9.4 Write unit tests for the SSE bus
     - `emit` delivers to supervisors for all events
     - `emit` delivers to agents only for events matching their accessible conversations
     - `removeClient` stops delivery to that client
