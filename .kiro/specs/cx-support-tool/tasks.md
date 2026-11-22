@@ -87,7 +87,7 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Accepts `--username`, `--password`, `--role` flags; hashes the password and inserts into `users`; never commits credentials
     - _Requirements: 9.1, 9.5_
 
-- [ ] 5. Checkpoint — Verify auth tracer bullet
+- [x] 5. Checkpoint — Verify auth tracer bullet
   - Ensure migration runs, the seed script creates users, login sets a cookie, proxy redirects unauthenticated requests to `/login`, and logout clears the cookie.
   - Ensure all tests pass, ask the user if questions arise.
 
