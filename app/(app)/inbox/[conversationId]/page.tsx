@@ -15,6 +15,7 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller'
+import { readAIConfig } from '@/lib/adapters/ai'
 import { currentUser } from '@/lib/auth/current-user'
 import { getConversation, type Message as ThreadMessage } from '@/lib/services/conversation'
 import { CHANNEL_LABELS, DELIVERY_LABELS, formatTime, PLATFORM_LABELS, STATUS_LABELS } from '../labels'
@@ -85,7 +86,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
-      <ComposeArea conversationId={c.id} />
+      <ComposeArea conversationId={c.id} aiEnabled={readAIConfig() !== null} />
     </div>
   )
 }

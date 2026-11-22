@@ -156,6 +156,20 @@ describe('thread page', () => {
     expect(html.match(/>Retry</g)).toHaveLength(1)
   })
 
+  it('offers a reply suggestion only when an AI endpoint is configured', async () => {
+    const conv = insertConversation({})
+    vi.stubEnv('AI_ENDPOINT_URL', 'http://127.0.0.1:11434')
+    const on = await thread(conv.id!)
+    expect(on).toContain('Suggest reply')
+    expect(on).not.toContain('AI suggestions are off')
+
+    vi.stubEnv('AI_ENDPOINT_URL', '')
+    const off = await thread(conv.id!)
+    expect(off).not.toContain('Suggest reply')
+    expect(off).toContain('AI suggestions are off. A supervisor can configure them in AI settings.')
+    expect(off).toMatch(/<textarea[^>]*aria-label="Reply"/)
+  })
+
   it('returns not found for a conversation the agent cannot access', async () => {
     const other = insertConversation({ assignedAgentId: 'agent-b' })
     user = agent('agent-a')
