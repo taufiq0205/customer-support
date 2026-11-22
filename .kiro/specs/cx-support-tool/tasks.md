@@ -370,13 +370,13 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate N agents (1–20) and M calls (1–100); assert no agent receives more than ⌈M/N⌉ assignments
     - _Requirements: 4.6_
 
-- [ ] 20. Build notifications API route
-  - [ ] 20.1 Create `app/api/notifications/route.ts`
+- [x] 20. Build notifications API route
+  - [x] 20.1 Create `app/api/notifications/route.ts`
     - `GET`: return unread notifications for the authenticated user
     - `PATCH`: mark one or all notifications as read (`{ ids: string[] | 'all' }`)
     - _Requirements: 4.2_
 
-  - [ ] 20.2 Add notification badge to the app layout
+  - [x] 20.2 Add notification badge to the app layout
     - Client Component; polls `GET /api/notifications` on mount and on SSE `notification.created` event; shows unread count badge
     - _Requirements: 4.2_
 
