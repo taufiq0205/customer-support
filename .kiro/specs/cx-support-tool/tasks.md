@@ -261,25 +261,25 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Mock adapter timing out; assert `failed` status
     - _Requirements: 5.2–5.4_
 
-- [ ] 14. Build inbox UI — unified inbox page
-  - [ ] 14.1 Create the protected app layout at `app/(app)/layout.tsx`
+- [x] 14. Build inbox UI — unified inbox page
+  - [x] 14.1 Create the protected app layout at `app/(app)/layout.tsx`
     - Server Component; establishes sidebar, top nav, and SSE connection bootstrap
     - Passes session context to child pages via a React context provider (Client Component)
     - _Requirements: 1.1, 9.3_
 
-  - [ ] 14.2 Create the inbox page at `app/(app)/inbox/page.tsx`
+  - [x] 14.2 Create the inbox page at `app/(app)/inbox/page.tsx`
     - Server Component; fetches initial conversations via `ConversationSvc.getConversations`
     - Renders conversation list with unread indicator, platform badge, channel badge, preview, and timestamp (all fields from Requirement 1.4)
     - Filter bar (platform, channel, assignment status, conversation status) and search box as Client Components
     - On SSE `conversation.updated` / `message.created` events, re-fetch and merge the updated conversation into the list
     - _Requirements: 1.1, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 14.3 Create the conversation thread page at `app/(app)/inbox/[conversationId]/page.tsx`
+  - [x] 14.3 Create the conversation thread page at `app/(app)/inbox/[conversationId]/page.tsx`
     - Server Component; fetches messages from `ConversationSvc.getConversation`; renders in `sentAt ASC` order
     - Shows pending/sent/failed delivery status per message
     - _Requirements: 1.7, 5.3_
 
-  - [ ]* 14.4 Write snapshot tests for inbox and thread pages
+  - [x]* 14.4 Write snapshot tests for inbox and thread pages
     - Render both pages with seeded conversation data; assert expected elements are present (conversation items, channel labels, message order)
     - _Requirements: 1.4, 1.7_
 
