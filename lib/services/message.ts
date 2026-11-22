@@ -1,5 +1,6 @@
 import { and, eq, lte, or, isNull } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
+import type { OutboundReply, PlatformAdapter, SendResult } from '@/lib/adapters/types'
 import type { Session } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { conversations, messages } from '@/lib/db/schema'
@@ -64,4 +65,25 @@ export function updateMessageStatus(
   if (!message) return { ok: false, error: 'not_found' }
   emitStatus(message)
   return { ok: true, value: message }
+}
+
+// No automatic retry: a resend after a timeout can double-send. The agent retries by posting again.
+export async function deliverOutbound(
+  message: Message,
+  reply: OutboundReply,
+  adapter: PlatformAdapter,
+  timeoutMs = 30_000,
+): Promise<Message> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<SendResult>((resolve) => {
+    timer = setTimeout(() => resolve({ status: 'failed', errorMessage: 'timeout' }), timeoutMs)
+  })
+  const result = await Promise.race([adapter.sendReply(reply), timeout])
+    .catch((): SendResult => ({ status: 'failed', errorMessage: 'send_error' }))
+    .finally(() => clearTimeout(timer))
+  const updated =
+    result.status === 'sent'
+      ? updateMessageStatus(message.id, 'sent', result.externalMessageId ?? undefined)
+      : updateMessageStatus(message.id, 'failed')
+  return updated.ok ? updated.value : message
 }

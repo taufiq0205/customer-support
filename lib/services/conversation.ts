@@ -229,7 +229,7 @@ export function getConversations(
   return { items, nextCursor: rows.length > limit && last ? `${last.lastMessageAt ?? 0}:${last.id}` : null }
 }
 
-function findAccessible(id: string, session: Session): Conversation | undefined {
+export function findAccessible(id: string, session: Session): Conversation | undefined {
   const conv = db.select().from(conversations).where(eq(conversations.id, id)).get()
   return conv && canAccess(conv, session) ? conv : undefined
 }
