@@ -1,5 +1,17 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import type { Channel, PlatformAdapter, SendResult } from './types'
+import {
+  AdapterPayloadError,
+  hasAny,
+  normalizeEventType,
+  parseObject,
+  pick,
+  required,
+  toChannel,
+  toDate,
+  toDirection,
+  toId,
+} from './lenient'
+import type { PlatformAdapter, SendResult } from './types'
 
 // Formats follow https://developers.respond.io/docs/webhooks/lwocem4sq812x-overview
 // and https://developers.respond.io/docs/api/a748f5bfb1bb5-send-a-message
@@ -8,34 +20,45 @@ export const RESPOND_IO_API_BASE_URL = 'https://api.respond.io/v2'
 export const RESPOND_IO_MESSAGE_EVENTS = ['message.received', 'message.sent']
 const SEND_TIMEOUT_MS = 30_000
 
-// shortcut: telegram, viber, wechat, email, custom_channel etc. are rejected, extend once the CX channel list grows
-const RESPOND_IO_CHANNELS: Record<string, Channel> = {
-  facebook: 'facebook',
-  instagram: 'instagram',
-  line: 'line',
-  whatsapp: 'whatsapp',
-  whatsapp_cloud: 'whatsapp',
-  whatsapp_business: 'whatsapp',
-  '360dialog_whatsapp': 'whatsapp',
-  twilio_whatsapp: 'whatsapp',
-  message_bird_whatsapp: 'whatsapp',
-  nexmo_whatsapp: 'whatsapp',
-}
+// Every field is read through these paths, rooted at the envelope; first match wins.
+// shortcut: telegram, viber, wechat, email, sms sources match no channel token and are rejected, extend toChannel once the CX channel list grows
+const RESPOND_IO_FIELDS = {
+  eventType: ['event_type', 'eventType', 'event'],
+  message: ['message'],
+  id: ['message.messageId', 'message.id', 'message.message_id'],
+  // respond.io has no conversation id; a contact's thread is its conversation.
+  conversationId: ['message.contactId', 'message.contact_id', 'contact.id'],
+  direction: ['message.traffic', 'message.direction'],
+  sentAt: ['message.timestamp', 'message.created_at', 'message.createdAt'],
+  text: ['message.message.text', 'message.text', 'message.message.body'],
+  messageType: ['message.message.type'],
+  attachments: ['message.message.attachment', 'message.message.attachments'],
+  channel: ['channel.source', 'channel.type', 'message.channel.source'],
+  firstName: ['contact.firstName', 'contact.first_name'],
+  lastName: ['contact.lastName', 'contact.last_name'],
+  name: ['contact.name', 'contact.fullName', 'contact.full_name'],
+  sentMessageId: ['messageId', 'data.messageId', 'id', 'data.id'],
+} as const
+const ATTACHMENT_TYPES = ['attachment', 'image', 'video', 'audio', 'file', 'sticker']
 
-// Thrown when the payload is unusable. The message never includes payload content.
-export class RespondIoPayloadError extends Error {
+export class RespondIoPayloadError extends AdapterPayloadError {
   name = 'RespondIoPayloadError'
 }
 
-type Json = Record<string, unknown>
-const isObject = (v: unknown): v is Json => typeof v === 'object' && v !== null && !Array.isArray(v)
-// respond.io ids are integers in the docs; accept digit strings too.
-const toId = (v: unknown): string | null =>
-  (typeof v === 'number' && Number.isSafeInteger(v) && v >= 0) || (typeof v === 'string' && /^\d+$/.test(v)) ? String(v) : null
+const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
-const hmacMatches = (secret: string, data: Buffer | string, given: Buffer) => {
+// The header may be base64 or hex (either case), optionally prefixed with `sha256=`.
+function signatureCandidates(header: string): Buffer[] {
+  const sig = header.replace(/^sha256=/i, '')
+  const out: Buffer[] = []
+  if (/^[0-9a-f]{64}$/i.test(sig)) out.push(Buffer.from(sig, 'hex'))
+  if (/^[A-Za-z0-9+/]+={0,2}$/.test(sig)) out.push(Buffer.from(sig, 'base64'))
+  return out
+}
+
+const hmacMatches = (secret: string, data: Buffer | string, candidates: Buffer[]) => {
   const expected = createHmac('sha256', secret).update(data).digest()
-  return given.length === expected.length && timingSafeEqual(given, expected)
+  return candidates.some((given) => given.length === expected.length && timingSafeEqual(given, expected))
 }
 
 export const respondIoAdapter: PlatformAdapter = {
@@ -44,9 +67,8 @@ export const respondIoAdapter: PlatformAdapter = {
     const bytes = Buffer.from(await req.arrayBuffer())
     const rawPayload = new TextDecoder().decode(bytes)
     const secret = process.env.RESPOND_IO_WEBHOOK_SECRET
-    const header = req.headers.get(RESPOND_IO_SIGNATURE_HEADER) ?? ''
-    if (!secret || !/^[A-Za-z0-9+/]+={0,2}$/.test(header)) return { valid: false, rawPayload }
-    const given = Buffer.from(header, 'base64')
+    const given = signatureCandidates(req.headers.get(RESPOND_IO_SIGNATURE_HEADER) ?? '')
+    if (!secret || given.length === 0) return { valid: false, rawPayload }
     if (hmacMatches(secret, bytes, given)) return { valid: true, rawPayload }
     // The docs' Node example signs JSON.stringify(parsedBody), not the raw bytes.
     let restringified: string
@@ -58,47 +80,37 @@ export const respondIoAdapter: PlatformAdapter = {
     return { valid: hmacMatches(secret, restringified, given), rawPayload }
   },
 
-  // Throws RespondIoPayloadError for invalid JSON, a non-object, a malformed message event, or an
-  // unmapped channel. Returns [] for events that are not message events.
+  // Throws RespondIoPayloadError (with .field) for invalid JSON, a non-object, or a message event with
+  // a missing or unusable field, including an unmapped channel. Returns [] for other events.
   async parseWebhook(rawPayload) {
-    let envelope: unknown
-    try {
-      envelope = JSON.parse(rawPayload)
-    } catch {
-      throw new RespondIoPayloadError('respond.io webhook payload is not valid JSON')
-    }
-    if (!isObject(envelope)) throw new RespondIoPayloadError('respond.io webhook payload is not an object')
-    if (!RESPOND_IO_MESSAGE_EVENTS.includes(envelope.event_type as string)) return []
-    const { message: m, contact, channel } = envelope
-    if (!isObject(m)) throw new RespondIoPayloadError('respond.io message event has no message object')
-    const id = toId(m.messageId)
-    // respond.io has no conversation id; a contact's thread is its conversation.
-    const contactId = toId(m.contactId) ?? (isObject(contact) ? toId(contact.id) : null)
-    const direction = m.traffic === 'incoming' ? 'inbound' : m.traffic === 'outgoing' ? 'outbound' : null
-    // The docs show both 10-digit (s) and 13-digit (ms) timestamps without stating a unit.
-    const ts = m.timestamp
-    const sentAt = typeof ts === 'number' && ts > 0 ? new Date(ts > 1e12 ? ts : ts * 1000) : null
-    if (!id || !contactId || !direction || !sentAt || Number.isNaN(sentAt.getTime())) {
-      throw new RespondIoPayloadError('respond.io message is missing a required field')
-    }
-    const source = isObject(channel) ? channel.source : undefined
-    if (typeof source !== 'string' || !Object.hasOwn(RESPOND_IO_CHANNELS, source)) {
-      throw new RespondIoPayloadError('respond.io message has a missing or unmapped channel')
-    }
-    const content = isObject(m.message) ? m.message : {}
-    const name = isObject(contact)
-      ? [contact.firstName, contact.lastName].filter((s) => typeof s === 'string' && s.trim()).join(' ')
-      : ''
+    const envelope = parseObject(rawPayload, RespondIoPayloadError)
+    const F = RESPOND_IO_FIELDS
+    const eventType = normalizeEventType(pick(envelope, F.eventType))
+    if (!eventType || !RESPOND_IO_MESSAGE_EVENTS.includes(eventType)) return []
+    const need = <T>(field: keyof typeof F, coerce: (v: unknown) => T | null) =>
+      required(envelope, field, F[field], coerce, RespondIoPayloadError)
+    need('message', (v) => (typeof v === 'object' && !Array.isArray(v) ? v : null))
+    const id = need('id', toId)
+    const contactId = need('conversationId', toId)
+    const direction = need('direction', toDirection)
+    // The docs show both 10-digit (s) and 13-digit (ms) timestamps without stating a unit; toDate handles both.
+    const sentAt = need('sentAt', toDate)
+    const channel = need('channel', toChannel)
+    const text = pick(envelope, F.text)
+    const name =
+      [pick(envelope, F.firstName), pick(envelope, F.lastName)].map(str).filter(Boolean).join(' ') ||
+      str(pick(envelope, F.name))
     return [
       {
         externalId: id,
         externalConversationId: contactId,
         platform: 'respond_io',
-        channel: RESPOND_IO_CHANNELS[source],
+        channel,
         direction,
         senderName: direction === 'inbound' && name ? name : null,
-        body: typeof content.text === 'string' ? content.text : null,
-        hasAttachment: content.type === 'attachment',
+        body: typeof text === 'string' ? text : null,
+        hasAttachment:
+          ATTACHMENT_TYPES.includes(str(pick(envelope, F.messageType)).toLowerCase()) || hasAny(envelope, F.attachments),
         sentAt,
       },
     ]
@@ -109,7 +121,8 @@ export const respondIoAdapter: PlatformAdapter = {
   async sendReply(reply): Promise<SendResult> {
     const apiKey = process.env.RESPOND_IO_API_KEY
     if (!apiKey) return { status: 'failed', errorMessage: 'RESPOND_IO_API_KEY is not set' }
-    const contactId = toId(reply.externalConversationId)
+    // Stays digits-only: the id is interpolated into the URL path.
+    const contactId = /^\d+$/.test(reply.externalConversationId) ? reply.externalConversationId : null
     if (!contactId) return { status: 'failed', errorMessage: 'Invalid contact id' }
     if (reply.body.trim().length === 0) return { status: 'failed', errorMessage: 'Reply text must not be empty' }
     try {
@@ -123,7 +136,7 @@ export const respondIoAdapter: PlatformAdapter = {
       // The error body's message may echo input, so report only the status.
       if (!res.ok) return { status: 'failed', errorMessage: `respond.io returned HTTP ${res.status}` }
       const json: unknown = await res.json().catch(() => null)
-      return { status: 'sent', externalMessageId: isObject(json) ? toId(json.messageId) : null }
+      return { status: 'sent', externalMessageId: toId(pick(json, RESPOND_IO_FIELDS.sentMessageId)) }
     } catch (err) {
       const timedOut = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
       return { status: 'failed', errorMessage: timedOut ? 'respond.io request timed out' : 'respond.io request failed' }

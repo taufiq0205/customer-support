@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AdapterPayloadError } from '@/lib/adapters/lenient'
 import { RESPOND_IO_SIGNATURE_HEADER, RespondIoPayloadError, respondIoAdapter } from '@/lib/adapters/respond-io'
 
 const SECRET = 'synthetic-signing-key'
@@ -68,11 +69,28 @@ describe('respondIoAdapter.verifyWebhook', () => {
   it.each([
     ['missing', undefined],
     ['empty', ''],
-    ['hex instead of base64', createHmac('sha256', SECRET).update(body).digest('hex')],
     ['truncated', sign(body).slice(0, -4)],
     ['non-base64 chars', `${sign(body)}!`],
+    ['truncated hex', createHmac('sha256', SECRET).update(body).digest('hex').slice(0, -2)],
+    ['hex signed with another key', createHmac('sha256', 'other-key').update(body).digest('hex')],
+    ['an unknown prefix', `sha1=${sign(body)}`],
   ])('rejects a %s header', async (_, signature) => {
     expect(await respondIoAdapter.verifyWebhook(webhook(body, signature))).toEqual({ valid: false, rawPayload: body })
+  })
+
+  it.each([
+    ['lowercase hex', createHmac('sha256', SECRET).update(body).digest('hex')],
+    ['uppercase hex', createHmac('sha256', SECRET).update(body).digest('hex').toUpperCase()],
+    ['sha256= base64', `sha256=${sign(body)}`],
+    ['sha256= hex', `sha256=${createHmac('sha256', SECRET).update(body).digest('hex')}`],
+  ])('accepts a %s header', async (_, signature) => {
+    expect(await respondIoAdapter.verifyWebhook(webhook(body, signature))).toEqual({ valid: true, rawPayload: body })
+  })
+
+  it('accepts a hex signature over the re-stringified JSON', async () => {
+    const pretty = JSON.stringify(JSON.parse(body), null, 2)
+    const hex = createHmac('sha256', SECRET).update(body).digest('hex')
+    expect((await respondIoAdapter.verifyWebhook(webhook(pretty, hex))).valid).toBe(true)
   })
 
   it('rejects a non-JSON body whose raw signature does not match', async () => {
@@ -155,7 +173,7 @@ describe('respondIoAdapter.parseWebhook', () => {
     ['no contact id anywhere', event({ ...incoming, contactId: undefined }, 'message.received', { contact: {} })],
     ['a bad traffic value', event({ ...incoming, traffic: 'sideways' })],
     ['a missing timestamp', event({ ...incoming, timestamp: undefined })],
-    ['a string timestamp', event({ ...incoming, timestamp: '2026-11-20' })],
+    ['a non-date string timestamp', event({ ...incoming, timestamp: 'yesterday' })],
     ['a telegram channel', event(incoming, 'message.received', { channel: { id: 7, source: 'telegram' } })],
     ['a prototype-key channel', event(incoming, 'message.received', { channel: { id: 7, source: 'toString' } })],
     ['no channel', event(incoming, 'message.received', { channel: undefined })],
@@ -164,6 +182,60 @@ describe('respondIoAdapter.parseWebhook', () => {
     expect(err).toBeInstanceOf(RespondIoPayloadError)
     expect((err as Error).message).not.toContain('synthetic order')
     expect((err as Error).message).not.toContain('Test Customer')
+  })
+})
+
+describe('respondIoAdapter.parseWebhook variants', () => {
+  it.each([
+    ['string ids', { messageId: '1726740558441000', contactId: '42' }, {}, { externalId: '1726740558441000', externalConversationId: '42' }],
+    ['message.id', { messageId: undefined, id: 555 }, {}, { externalId: '555' }],
+    ['snake_case fields', { messageId: undefined, message_id: 9, contactId: undefined, contact_id: 43 }, {}, { externalId: '9', externalConversationId: '43' }],
+    ['an ISO timestamp', { timestamp: '2026-11-20T09:15:00Z' }, {}, { sentAt: new Date('2026-11-20T09:15:00Z') }],
+    ['a numeric-string ms timestamp', { timestamp: '1795000000000' }, {}, { sentAt: new Date(1795000000000) }],
+    ['created_at seconds', { timestamp: undefined, created_at: 1795000000 }, {}, { sentAt: new Date(1795000000000) }],
+    ['direction inbound', { traffic: undefined, direction: 'inbound' }, {}, { direction: 'inbound' }],
+    ['traffic OUTGOING', { traffic: 'OUTGOING' }, {}, { direction: 'outbound', senderName: null }],
+    ['message.text', { message: undefined, text: 'Synthetic flat text' }, {}, { body: 'Synthetic flat text' }],
+    ['an image type', { message: { type: 'image', url: 'https://cdn.example.invalid/x.jpg' } }, {}, { hasAttachment: true, body: null }],
+    ['an attachments array', { message: { type: 'text', text: 'hi', attachments: [{}] } }, {}, { hasAttachment: true }],
+    ['contact.name', {}, { contact: { id: 42, name: 'Synthetic Name' } }, { senderName: 'Synthetic Name' }],
+    ['snake_case contact names', {}, { contact: { id: 42, first_name: 'Synth', last_name: 'Etic' } }, { senderName: 'Synth Etic' }],
+    ['channel.type', {}, { channel: { id: 7, type: 'instagram' } }, { channel: 'instagram' }],
+    ['event_type with underscores', {}, { event_type: 'MESSAGE_RECEIVED' }, { externalId: '1726740558441000' }],
+  ])('accepts %s', async (_, messageOverrides, envelopeOverrides, expected) => {
+    const [m] = await respondIoAdapter.parseWebhook(event({ ...incoming, ...messageOverrides }, 'message.received', envelopeOverrides))
+    expect(m).toMatchObject(expected)
+  })
+
+  it.each([
+    ['WhatsApp', 'whatsapp'],
+    ['whatsapp-business', 'whatsapp'],
+    ['twilio_whatsapp', 'whatsapp'],
+    ['message_bird_whatsapp', 'whatsapp'],
+    ['facebook_messenger', 'facebook'],
+    ['IG', 'instagram'],
+    ['LINE', 'line'],
+  ])('maps channel source %s to %s', async (source, channel) => {
+    const raw = event(incoming, 'message.received', { channel: { id: 7, source } })
+    expect((await respondIoAdapter.parseWebhook(raw))[0].channel).toBe(channel)
+  })
+
+  it.each([
+    ['channel', { channel: { id: 7, source: 'online_store' } }, {}],
+    ['channel', { channel: { id: 7, source: 'telegram' } }, {}],
+    ['sentAt', {}, { timestamp: 0 }],
+    ['sentAt', {}, { timestamp: 'yesterday' }],
+    ['id', {}, { messageId: 1.5 }],
+    ['conversationId', { contact: {} }, { contactId: undefined }],
+    ['direction', {}, { traffic: 'sideways' }],
+    ['message', { message: 'not an object' }, {}],
+  ])('names the broken field %s in RespondIoPayloadError', async (field, envelopeOverrides, messageOverrides) => {
+    const raw = event({ ...incoming, ...messageOverrides }, 'message.received', envelopeOverrides)
+    const err = await respondIoAdapter.parseWebhook(raw).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(RespondIoPayloadError)
+    expect(err).toBeInstanceOf(AdapterPayloadError)
+    expect((err as RespondIoPayloadError).field).toBe(field)
+    expect((err as Error).message).not.toContain('synthetic order')
   })
 })
 
@@ -184,6 +256,15 @@ describe('respondIoAdapter.sendReply', () => {
     expect(init.headers.Authorization).toBe(`Bearer ${API_KEY}`)
     expect(JSON.parse(init.body)).toEqual({ message: { type: 'text', text: 'Synthetic reply' } })
     expect(init.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it.each([
+    ['a string messageId', { messageId: 'abc-1' }, 'abc-1'],
+    ['data.messageId', { data: { messageId: 11 } }, '11'],
+    ['data.id', { data: { id: 12 } }, '12'],
+  ])('reads the sent message id from %s', async (_, json, id) => {
+    vi.stubGlobal('fetch', respond(200, json))
+    expect(await respondIoAdapter.sendReply(reply)).toEqual({ status: 'sent', externalMessageId: id })
   })
 
   it('returns sent with a null id when the 2xx body has no messageId', async () => {
