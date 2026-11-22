@@ -310,22 +310,22 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate strings containing one or more recognised PII tokens (email, phone, order, name); assert no original PII token survives and each replaced position contains the appropriate label
     - _Requirements: 12.6_
 
-- [ ] 17. Implement AI adapter and suggestion route
-  - [ ] 17.1 Create `lib/adapters/ai.ts` implementing `AIAdapter`
+- [x] 17. Implement AI adapter and suggestion route
+  - [x] 17.1 Create `lib/adapters/ai.ts` implementing `AIAdapter`
     - `suggest(req: AISuggestionRequest)`: POST to `endpointUrl/v1/chat/completions`; 10-second timeout; return `{ suggestion }` on success or `{ suggestion: null, errorMessage }` on timeout/error
     - Import `redact` from `lib/services/redaction.ts` and enforce redaction before assembling the request body
     - Write to `aiRequestLog` (timestamp, model, conversationId — no PII)
     - _Requirements: 12.3, 12.6, 12.7, 12.8, 12.10_
 
-  - [ ] 17.2 Create `app/api/conversations/[id]/ai-suggest/route.ts`
+  - [x] 17.2 Create `app/api/conversations/[id]/ai-suggest/route.ts`
     - `POST`: verify session; read AI config from env; return 404 if no endpoint configured; call `ConversationSvc.getThread`; call `AIAdapter.suggest`; return suggestion as JSON
     - _Requirements: 12.1, 12.4, 12.5, 12.7, 12.9_
 
-  - [ ] 17.3 Add "Suggest reply" button to `ComposeArea`
+  - [x] 17.3 Add "Suggest reply" button to `ComposeArea`
     - Only shown when `AI_ENDPOINT_URL` env var is set (passed from Server Component as a prop); calls `/api/conversations/[id]/ai-suggest`; inserts suggestion as editable draft text; shows inline error on failure without blocking compose area
     - _Requirements: 12.4, 12.5, 12.7, 12.9_
 
-  - [ ]* 17.4 Write integration tests for AI suggestion
+  - [x]* 17.4 Write integration tests for AI suggestion
     - Mock AI endpoint returning a suggestion; assert redaction was applied and compose draft populated
     - Mock endpoint timeout; assert inline error shown and compose area remains accessible
     - Mock missing endpoint config; assert button is hidden
