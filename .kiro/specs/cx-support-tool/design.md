@@ -119,14 +119,14 @@ export interface IncomingMessage {
 
 export interface OutboundReply {
   conversationId: string    // internal ID
+  externalConversationId: string // adapters cannot read the DB
   body: string
 }
 
-export interface SendResult {
-  externalMessageId: string
-  status: 'sent' | 'failed'
-  errorMessage?: string
-}
+// Zaapi returns no message id; its outbound copy arrives later via the message.sent webhook.
+export type SendResult =
+  | { status: 'sent'; externalMessageId: string | null }
+  | { status: 'failed'; errorMessage: string }
 
 export interface WebhookVerificationResult {
   valid: boolean
@@ -599,10 +599,10 @@ sequenceDiagram
     Action->>Svc: storeOutbound(conversationId, body)
     Svc->>DB: INSERT message (status='pending')
     Svc->>Bus: emit({ type: 'message.created', status: 'pending' })
-    Action->>Adapter: sendReply({ conversationId, body })
+    Action->>Adapter: sendReply({ conversationId, externalConversationId, body })
     alt API success
         Adapter-->>Action: { status: 'sent', externalMessageId }
-        Action->>DB: UPDATE message (status='sent', externalId)
+        Action->>DB: UPDATE message (status='sent', externalId if returned)
         Action->>Bus: emit({ type: 'message.created', status: 'sent' })
     else API error / timeout (30s)
         Adapter-->>Action: { status: 'failed', errorMessage }

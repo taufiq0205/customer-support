@@ -26,8 +26,9 @@ export interface OutboundReply {
   body: string
 }
 
+// Zaapi returns no message id; its outbound copy arrives later via the message.sent webhook.
 export type SendResult =
-  | { status: 'sent'; externalMessageId: string }
+  | { status: 'sent'; externalMessageId: string | null }
   | { status: 'failed'; errorMessage: string }
 
 export interface WebhookVerificationResult {
