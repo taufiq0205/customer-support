@@ -226,6 +226,53 @@ describe('message service', () => {
     expect(msgSvc.updateMessageStatus('missing', 'failed')).toEqual({ ok: false, error: 'not_found' })
   })
 
+  describe('platform echo of a reply sent from this app', () => {
+    const echo = (body = 'Thanks, checking now') =>
+      incoming({ externalId: 'echo-1', direction: 'outbound', senderName: null, body })
+    function stored(status?: 'unconfirmed' | 'sent') {
+      const [id] = svc.ingest([incoming()]).created
+      const out = msgSvc.storeOutbound(id, 'Thanks, checking now', agentA)
+      if (!out.ok) throw new Error('store failed')
+      if (status) msgSvc.updateMessageStatus(out.value.id, status)
+      events.length = 0
+      return { id, messageId: out.value.id }
+    }
+    const outbound = (id: string) =>
+      db.select().from(messages).all().filter((m) => m.conversationId === id && m.direction === 'outbound')
+
+    it('settles an unconfirmed row as sent instead of adding a second copy', () => {
+      const { id, messageId } = stored('unconfirmed')
+      svc.ingest([echo()])
+      expect(outbound(id)).toEqual([expect.objectContaining({ id: messageId, status: 'sent', externalId: 'echo-1' })])
+      expect(events.map((e) => e.payload)).toEqual([{ messageId, status: 'sent' }])
+    })
+
+    it('settles a pending row when the platform returned no message id', () => {
+      const { id, messageId } = stored()
+      svc.ingest([echo()])
+      svc.ingest([echo()]) // duplicate webhook delivery
+      expect(outbound(id)).toEqual([expect.objectContaining({ id: messageId, status: 'sent', externalId: 'echo-1' })])
+    })
+
+    it('settles a Zaapi row already sent without a platform id', () => {
+      const { id, messageId } = stored('sent')
+      svc.ingest([echo()])
+      expect(outbound(id)).toEqual([expect.objectContaining({ id: messageId, status: 'sent', externalId: 'echo-1' })])
+    })
+
+    it('inserts an echo whose body matches no local row', () => {
+      const { id, messageId } = stored('unconfirmed')
+      svc.ingest([echo('Sent from the platform inbox')])
+      expect(outbound(id)).toHaveLength(2)
+      expect(outbound(id)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: messageId, status: 'unconfirmed' }),
+          expect.objectContaining({ externalId: 'echo-1', status: 'sent', body: 'Sent from the platform inbox' }),
+        ]),
+      )
+    })
+  })
+
   it("refuses to store a reply in another agent's conversation", () => {
     const [id] = svc.ingest([incoming()]).created
     db.update(conversations).set({ assignedAgentId: 'agent-b' }).run()

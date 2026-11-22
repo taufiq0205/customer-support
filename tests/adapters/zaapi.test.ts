@@ -394,16 +394,22 @@ describe('zaapiAdapter.sendReply', () => {
     expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: 'sent', externalMessageId: null })
   })
 
-  it.each([400, 401, 404, 500, 503])('returns failed on HTTP %i without leaking the body or key', async (status) => {
+  it.each([
+    [400, 'failed'],
+    [401, 'failed'],
+    [404, 'failed'],
+    [500, 'unconfirmed'],
+    [503, 'unconfirmed'],
+  ])('maps HTTP %i to %s without leaking the body or key', async (status, outcome) => {
     vi.stubGlobal('fetch', respond(status, { error: { message: 'echoed Synthetic reply', statusCode: status } }))
-    expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: 'failed', errorMessage: `Zaapi returned HTTP ${status}` })
+    expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: outcome, errorMessage: `Zaapi returned HTTP ${status}` })
   })
 
-  it('returns failed when fetch rejects or times out', async () => {
+  it('returns unconfirmed when fetch rejects or times out, since Zaapi may have sent it', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')))
-    expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: 'failed', errorMessage: 'Zaapi request failed' })
+    expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: 'unconfirmed', errorMessage: 'Zaapi request failed' })
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new DOMException('timed out', 'TimeoutError')))
-    expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: 'failed', errorMessage: 'Zaapi request timed out' })
+    expect(await zaapiAdapter.sendReply(reply)).toEqual({ status: 'unconfirmed', errorMessage: 'Zaapi request timed out' })
   })
 
   it('returns failed without calling fetch when the API key is missing', async () => {

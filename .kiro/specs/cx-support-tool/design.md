@@ -808,8 +808,8 @@ sequenceDiagram
 |---|---|
 | Webhook HMAC invalid | Return 401; log rejection without storing payload; emit no SSE event |
 | Webhook processing error | Return 500; log error with stack; event log marked `failed`; retry policy left to platform |
-| Platform API send failure | Mark message `failed`; surface error to agent; allow retry; do not discard message |
-| Platform API send timeout (30 s) | Same as failure; mark `unconfirmed` with retry option |
+| Platform API send failure | HTTP 4xx or pre-flight rejection: mark message `failed`; surface error to agent; allow retry; do not discard message |
+| Platform API send timeout (30 s) | Also network error or HTTP 5xx: mark `unconfirmed`; the outbound echo webhook settles it as `sent`; a resend needs `confirmResend: true`, else 409 |
 | AI endpoint timeout (10 s) | Return error message to agent; compose area remains accessible; log without PII |
 | AI endpoint error response | Same as timeout |
 | Database write failure | Log error; return 500; do not emit SSE event for incomplete write |
