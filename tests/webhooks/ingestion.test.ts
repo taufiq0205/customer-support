@@ -12,11 +12,14 @@ import {
   signRespondIo,
   signZaapi,
   stubWebhookEnv,
+  users,
   webhookLog,
   zaapiEvent,
   zaapiRequest,
   zaapiRoute,
 } from './helpers'
+
+const { configureAutoAssign } = await import('@/lib/services/assignment')
 
 const cases = [
   { platform: 'zaapi', route: zaapiRoute, request: zaapiRequest, sign: signZaapi, event: zaapiEvent },
@@ -101,5 +104,21 @@ describe('POST /api/webhooks/zaapi lookup failure', () => {
       expect.objectContaining({ verified: 1, processingStatus: 'failed', errorMessage: 'ZaapiLookupError' }),
     ])
     expect(db.select().from(conversations).all()).toEqual([])
+  })
+})
+
+describe('POST /api/webhooks auto-assign', () => {
+  it('assigns a new conversation by the configured round-robin rule', async () => {
+    db.insert(users)
+      .values({ id: 'agent-a', username: 'agent-a', passwordHash: 'x', displayName: 'agent-a', role: 'agent', createdAt: 0 })
+      .onConflictDoNothing()
+      .run()
+    expect(configureAutoAssign({ strategy: 'round_robin' }, 'sup').ok).toBe(true)
+    const body = zaapiEvent()
+    const res = await zaapiRoute.POST(zaapiRequest(body, signZaapi(body)))
+
+    expect(res.status).toBe(200)
+    expect(db.select().from(conversations).all()).toEqual([expect.objectContaining({ assignedAgentId: 'agent-a' })])
+    expect(sse.events.map((e) => e.type)).toContain('conversation.assigned')
   })
 })

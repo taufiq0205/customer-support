@@ -5,6 +5,7 @@ import type { Platform, PlatformAdapter } from '@/lib/adapters/types'
 import { ZaapiLookupError } from '@/lib/adapters/zaapi'
 import { db } from '@/lib/db'
 import { webhookLog } from '@/lib/db/schema'
+import { autoAssign } from '@/lib/services/assignment'
 import { ingest } from '@/lib/services/conversation'
 
 // Name and field only: an error message can echo payload content.
@@ -27,7 +28,8 @@ export async function handleWebhook(platform: Platform, adapter: PlatformAdapter
   const { valid, rawPayload } = await adapter.verifyWebhook(req).catch(() => ({ valid: false, rawPayload: '' }))
   if (!valid) return finish(401, { processingStatus: 'rejected' })
   try {
-    ingest(await adapter.parseWebhook(rawPayload))
+    const { created } = ingest(await adapter.parseWebhook(rawPayload))
+    for (const id of created) autoAssign(id)
     return finish(200, { verified: 1, processingStatus: 'processed' })
   } catch (err) {
     // A failed Zaapi lookup is transient, so 503 asks Zaapi to retry.
