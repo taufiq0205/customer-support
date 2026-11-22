@@ -117,67 +117,67 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Same pattern as Zaapi adapter tests: signature verification, payload parsing, send with mock HTTP
     - _Requirements: 3.1–3.6, 10.5_
 
-- [ ] 8. Implement core services — conversation and message
-  - [ ] 8.1 Create `lib/services/conversation.ts`
+- [x] 8. Implement core services — conversation and message
+  - [x] 8.1 Create `lib/services/conversation.ts`
     - `ingest(messages: IncomingMessage[])`: upsert conversation (keyed on `externalId + platform`); insert new messages; update `unreadCount`, `lastMessageAt`, `lastMessagePreview`; reopen resolved/snoozed conversations on inbound message (transition to `open`, write `conversationHistory` row); emit SSE event after each write
     - `getConversations(filters, session)`: query with index-backed filters (`status`, `assignedAgentId`, `platform`, `channel`); apply agent ownership restriction (agents see only their own or unassigned); cursor-paginate on `lastMessageAt DESC`
     - `getConversation(id, session)`: return conversation + messages in `sentAt ASC` order; enforce ownership
     - `changeStatus(id, toStatus, session, reason?, snoozedUntil?)`: validate transition; update `conversations`; write `conversationHistory`; emit SSE event
     - _Requirements: 1.1, 1.3, 1.4, 1.5, 1.7, 2.2, 3.2, 7.1, 7.2, 7.3, 7.4, 7.5, 10.4_
 
-  - [ ] 8.2 Create `lib/services/message.ts`
+  - [x] 8.2 Create `lib/services/message.ts`
     - `storeOutbound(conversationId, body, session)`: insert message with `status: 'pending'`; emit SSE event
     - `updateMessageStatus(messageId, status, externalId?)`: update message; emit SSE event
     - _Requirements: 5.2, 5.3, 5.4_
 
-  - [ ] 8.3 Write property test — Property 4: message thread chronological order
+  - [x] 8.3 Write property test — Property 4: message thread chronological order
     - **Property 4: Message thread is in chronological order**
     - **Validates: Requirements 1.7**
     - Generate arbitrarily ordered message arrays; call `getConversation` with a seeded DB; assert `sentAt` values are non-decreasing
     - _Requirements: 1.7_
 
-  - [ ] 8.4 Write property test — Property 2: inbox filter returns only matching conversations
+  - [x] 8.4 Write property test — Property 2: inbox filter returns only matching conversations
     - **Property 2: Inbox filter returns only matching conversations**
     - **Validates: Requirements 1.5**
     - Generate arbitrary conversation arrays and filter combinations; assert all returned items satisfy every applied filter and no qualifying conversation is omitted
     - _Requirements: 1.5_
 
-  - [ ] 8.5 Write property test — Property 3: inbox search returns only matching conversations
+  - [x] 8.5 Write property test — Property 3: inbox search returns only matching conversations
     - **Property 3: Inbox search returns only matching conversations**
     - **Validates: Requirements 1.6**
     - Generate arbitrary conversations and query strings; assert all results contain the query in name, identifier, or preview (case-insensitive)
     - _Requirements: 1.6_
 
-  - [ ] 8.6 Write property test — Property 9: resolved conversations absent from queue
+  - [x] 8.6 Write property test — Property 9: resolved conversations absent from queue
     - **Property 9: Resolved conversations are absent from the queue**
     - **Validates: Requirements 4.7, 7.1**
     - Transition conversations to `resolved`; assert queue query returns none of them
     - _Requirements: 4.7, 7.1_
 
-  - [ ]* 8.7 Write property test — Property 12: snoozed conversation hidden before expiry
+  - [x]* 8.7 Write property test — Property 12: snoozed conversation hidden before expiry
     - **Property 12: Snoozed conversation is hidden before snooze expiry**
     - **Validates: Requirements 7.2**
     - Generate future and past snooze times; assert inbox query at `t < T` omits the conversation and at `t ≥ T` returns it as `open`
     - _Requirements: 7.2_
 
-  - [ ]* 8.8 Write property test — Property 13: new message reopens resolved/snoozed
+  - [x]* 8.8 Write property test — Property 13: new message reopens resolved/snoozed
     - **Property 13: New message reopens resolved or snoozed conversation**
     - **Validates: Requirements 7.3**
     - Generate conversations with `resolved` or `snoozed` status; call `ingest` with an inbound message; assert status is `open`
     - _Requirements: 7.3_
 
-  - [ ]* 8.9 Write property test — Property 14: every status transition recorded in history
+  - [x]* 8.9 Write property test — Property 14: every status transition recorded in history
     - **Property 14: Every status transition is recorded in history**
     - **Validates: Requirements 7.4**
     - Generate N sequential status transitions; assert `conversationHistory` contains at least N rows for that conversation
     - _Requirements: 7.4_
 
 - [ ] 9. Implement SSE event bus and /api/events route
-  - [ ] 9.1 Create `lib/events/types.ts`
+  - [x] 9.1 Create `lib/events/types.ts`
     - Define and export `SSEEventType` union and `SSEEvent` interface as specified in the design
     - _Requirements: 1.2, 11.2_
 
-  - [ ] 9.2 Create `lib/events/bus.ts`
+  - [x] 9.2 Create `lib/events/bus.ts`
     - In-process `Map<clientId, { controller, userId, role }>` bus
     - Implement `addClient`, `removeClient`, `emit(event, visibleToUserId?)` — supervisors receive all events; agents receive only events for accessible conversations
     - _Requirements: 1.2, 9.3, 11.2_
