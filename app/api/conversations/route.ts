@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   }
   for (const [field, allowed] of Object.entries(ENUM_PARAMS)) {
     const value = query.get(field)
-    if (value === null) continue
+    if (!value) continue
     if (!allowed.includes(value)) return Response.json({ error: 'invalid_query', field }, { status: 400 })
     Object.assign(filters, { [field]: value })
   }

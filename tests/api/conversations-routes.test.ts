@@ -19,6 +19,13 @@ describe('conversations routes', () => {
     expect(await res.json()).toEqual({ error: 'invalid_query', field: 'channel' })
   })
 
+  it('treat empty filter params as no filter', async () => {
+    insertConversation()
+    const res = await list(supervisor, '?status=&platform=&channel=&assignedTo=')
+    expect(res.status).toBe(200)
+    expect((await res.json()).items).toHaveLength(1)
+  })
+
   it('assignedTo=unassigned returns only unassigned conversations', async () => {
     const free = insertConversation({ assignedAgentId: null })
     insertConversation({ assignedAgentId: 'agent-a' })
