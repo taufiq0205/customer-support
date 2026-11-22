@@ -108,12 +108,12 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - `sendReply` with a mocked HTTP client returns `{ status: 'sent' }` on 200 and `{ status: 'failed' }` on 4xx/5xx
     - _Requirements: 2.1–2.6, 10.5_
 
-- [ ] 7. Implement respond.io adapter
-  - [ ] 7.1 Create `lib/adapters/respond-io.ts` implementing `PlatformAdapter`
+- [x] 7. Implement respond.io adapter
+  - [x] 7.1 Create `lib/adapters/respond-io.ts` implementing `PlatformAdapter`
     - Mirror the Zaapi adapter structure; use `RESPOND_IO_API_KEY` and `RESPOND_IO_WEBHOOK_SECRET`; set `platform: 'respond_io'`
     - _Requirements: 3.1–3.6, 10.3, 10.5_
 
-  - [ ] 7.2 Write unit tests for `respond-io.ts`
+  - [x] 7.2 Write unit tests for `respond-io.ts`
     - Same pattern as Zaapi adapter tests: signature verification, payload parsing, send with mock HTTP
     - _Requirements: 3.1–3.6, 10.5_
 
