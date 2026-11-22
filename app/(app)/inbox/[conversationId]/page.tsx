@@ -32,6 +32,8 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
   const result = getConversation((await params).conversationId, session)
   if (!result.ok) notFound()
   const { conversation: c, messages } = result.value
+  // Only the newest outbound copy of a body offers retry, so an old Resend cannot send a third copy.
+  const latestByBody = new Map(messages.filter((m) => m.direction === 'outbound').map((m) => [m.body, m.id]))
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 p-4">
@@ -69,7 +71,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
                         <MessageFooter className="gap-2">
                           {m.sentAt !== null && <time dateTime={new Date(m.sentAt).toISOString()}>{formatTime(m.sentAt)}</time>}
                           {outbound && <Badge variant={DELIVERY_VARIANTS[m.status]}>{DELIVERY_LABELS[m.status]}</Badge>}
-                          {outbound && m.body && (m.status === 'failed' || m.status === 'unconfirmed') && (
+                          {outbound && m.body && latestByBody.get(m.body) === m.id && (m.status === 'failed' || m.status === 'unconfirmed') && (
                             <RetryButton conversationId={c.id} body={m.body} unconfirmed={m.status === 'unconfirmed'} />
                           )}
                         </MessageFooter>

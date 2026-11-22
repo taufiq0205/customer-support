@@ -146,6 +146,16 @@ describe('thread page', () => {
     expect(html.indexOf('>Resend<')).toBeLessThan(html.indexOf('reply pending'))
   })
 
+  it('offers retry only on the newest copy once a reply has been resent', async () => {
+    const conv = insertConversation({})
+    insertMessage(conv.id, { body: 'same reply', direction: 'outbound', status: 'unconfirmed' })
+    insertMessage(conv.id, { body: 'same reply', direction: 'outbound', status: 'failed' })
+
+    const html = await thread(conv.id)
+    expect(html).not.toContain('>Resend<')
+    expect(html.match(/>Retry</g)).toHaveLength(1)
+  })
+
   it('returns not found for a conversation the agent cannot access', async () => {
     const other = insertConversation({ assignedAgentId: 'agent-b' })
     user = agent('agent-a')
