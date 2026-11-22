@@ -51,6 +51,7 @@ export function storeOutbound(conversationId: string, body: string, session: Ses
   return { ok: true, value: message }
 }
 
+// Settles a pending row only: a late send result must not overwrite a row the platform echo already confirmed.
 export function updateMessageStatus(
   messageId: string,
   status: Message['status'],
@@ -59,7 +60,7 @@ export function updateMessageStatus(
   const message = db
     .update(messages)
     .set({ status, ...(externalId === undefined ? {} : { externalId }) })
-    .where(eq(messages.id, messageId))
+    .where(and(eq(messages.id, messageId), eq(messages.status, 'pending')))
     .returning()
     .get()
   if (!message) return { ok: false, error: 'not_found' }
@@ -67,7 +68,24 @@ export function updateMessageStatus(
   return { ok: true, value: message }
 }
 
+// An unconfirmed outbound reply with this body blocks a blind resend: the platform may have delivered it.
+export function findUnconfirmed(conversationId: string, body: string): Message | undefined {
+  return db
+    .select()
+    .from(messages)
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        eq(messages.direction, 'outbound'),
+        eq(messages.status, 'unconfirmed'),
+        eq(messages.body, body),
+      ),
+    )
+    .get()
+}
+
 // No automatic retry: a resend after a timeout can double-send. The agent retries by posting again.
+// A timeout or thrown error is unconfirmed, not failed: the platform may still have sent it.
 export async function deliverOutbound(
   message: Message,
   reply: OutboundReply,
@@ -76,14 +94,12 @@ export async function deliverOutbound(
 ): Promise<Message> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<SendResult>((resolve) => {
-    timer = setTimeout(() => resolve({ status: 'failed', errorMessage: 'timeout' }), timeoutMs)
+    timer = setTimeout(() => resolve({ status: 'unconfirmed', errorMessage: 'timeout' }), timeoutMs)
   })
   const result = await Promise.race([adapter.sendReply(reply), timeout])
-    .catch((): SendResult => ({ status: 'failed', errorMessage: 'send_error' }))
+    .catch((): SendResult => ({ status: 'unconfirmed', errorMessage: 'send_error' }))
     .finally(() => clearTimeout(timer))
-  const updated =
-    result.status === 'sent'
-      ? updateMessageStatus(message.id, 'sent', result.externalMessageId ?? undefined)
-      : updateMessageStatus(message.id, 'failed')
-  return updated.ok ? updated.value : message
+  const externalId = result.status === 'sent' ? (result.externalMessageId ?? undefined) : undefined
+  const updated = updateMessageStatus(message.id, result.status, externalId)
+  return updated.ok ? updated.value : (db.select().from(messages).where(eq(messages.id, message.id)).get() ?? message)
 }

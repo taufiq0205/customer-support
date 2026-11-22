@@ -1,4 +1,4 @@
-import { and, eq, isNull, lte, or, sql, type SQL } from 'drizzle-orm'
+import { and, eq, inArray, isNull, like, lte, or, sql, type SQL } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
 import type { IncomingMessage } from '@/lib/adapters/types'
 import type { Session } from '@/lib/auth/session'
@@ -79,6 +79,46 @@ export function ingest(incoming: IncomingMessage[]): { created: string[]; update
         })
         .returning()
         .get()
+
+      // The platform echo of a reply sent from this app settles its local row instead of adding a second copy.
+      // Zaapi returns no message id and a timed-out send has none, so match the oldest unsettled row by body.
+      const firstEcho =
+        !inbound &&
+        !tx
+          .select({ id: messages.id })
+          .from(messages)
+          .where(and(eq(messages.conversationId, conv.id), eq(messages.externalId, m.externalId)))
+          .get()
+      const local =
+        firstEcho &&
+        tx
+          .select({ id: messages.id })
+          .from(messages)
+          .where(
+            and(
+              eq(messages.conversationId, conv.id),
+              eq(messages.direction, 'outbound'),
+              like(messages.externalId, 'local:%'),
+              inArray(messages.status, ['pending', 'unconfirmed']),
+              eq(messages.body, body),
+            ),
+          )
+          .orderBy(messages.createdAt, messages.id)
+          .get()
+      if (local) {
+        const settled = tx
+          .update(messages)
+          .set({ status: 'sent', externalId: m.externalId, sentAt })
+          .where(eq(messages.id, local.id))
+          .returning()
+          .get()!
+        events.push([
+          { type: 'message.created', conversationId: conv.id, payload: { messageId: settled.id, status: settled.status } },
+          visibleTo(conv),
+        ])
+        updated.add(conv.id)
+        return
+      }
 
       const message = tx
         .insert(messages)

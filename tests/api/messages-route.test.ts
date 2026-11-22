@@ -12,6 +12,7 @@ vi.mock('@/lib/adapters/respond-io', () => ({ respondIoAdapter: { sendReply } })
 
 const { addClient, removeClient } = await import('@/lib/events/bus')
 const { deliverOutbound, storeOutbound } = await import('@/lib/services/message')
+const { ingest } = await import('@/lib/services/conversation')
 
 let events: { type: string; conversationId: string; payload: { messageId: string; status: string } }[] = []
 
@@ -101,12 +102,43 @@ describe('POST /api/conversations/[id]/messages', () => {
     expect(events.at(-1)?.payload).toEqual({ messageId: message.id, status: 'failed' })
   })
 
-  it('marks the row failed when the adapter throws', async () => {
+  it('marks the row unconfirmed when the adapter throws', async () => {
     sendReply.mockRejectedValue(new Error('synthetic network error'))
     const { res } = await send()
     const message = await res.json()
     await flushAfter()
-    expect(findRow(message.id)?.status).toBe('failed')
+    expect(findRow(message.id)?.status).toBe('unconfirmed')
+  })
+
+  it('refuses a blind resend of an unconfirmed reply with 409 and stores nothing', async () => {
+    sendReply.mockResolvedValueOnce({ status: 'unconfirmed', errorMessage: 'timeout' })
+    const { conv, res } = await send()
+    const first = await res.json()
+    await flushAfter()
+    pending.length = 0
+    const retry = await postMessage(agent('agent-a'), conv.id!, '{"body":"Synthetic reply"}')
+    expect(retry.status).toBe(409)
+    expect(await retry.json()).toEqual({ error: 'unconfirmed_duplicate', messageId: first.id })
+    expect(db.select().from(messages).all()).toHaveLength(1)
+    expect(pending).toHaveLength(0)
+
+    const other = await postMessage(agent('agent-a'), conv.id!, '{"body":"A different synthetic reply"}')
+    expect(other.status).toBe(202)
+  })
+
+  it('resends an unconfirmed reply when the agent confirms', async () => {
+    sendReply.mockResolvedValueOnce({ status: 'unconfirmed', errorMessage: 'timeout' })
+    const { conv } = await send()
+    await flushAfter()
+    pending.length = 0
+    sendReply.mockResolvedValueOnce({ status: 'sent', externalMessageId: 'platform-msg-3' })
+    const retry = await postMessage(agent('agent-a'), conv.id!, '{"body":"Synthetic reply","confirmResend":true}')
+    expect(retry.status).toBe(202)
+    await flushAfter()
+    expect(sendReply).toHaveBeenCalledTimes(2)
+    expect(db.select().from(messages).all().map((m) => m.status)).toEqual(
+      expect.arrayContaining(['unconfirmed', 'sent']),
+    )
   })
 
   it('leaves the failed row in place when the agent retries by posting again', async () => {
@@ -129,15 +161,42 @@ describe('POST /api/conversations/[id]/messages', () => {
 })
 
 describe('deliverOutbound', () => {
-  it('marks the row failed when the adapter does not answer before the timeout', async () => {
+  const hanging = { sendReply: () => new Promise<SendResult>(() => {}) }
+
+  function store() {
     const conv = insertConversation({ assignedAgentId: 'agent-a' })
     const stored = storeOutbound(conv.id!, 'Synthetic reply', agent('agent-a'))
     if (!stored.ok) throw new Error('store failed')
-    const hanging = { sendReply: () => new Promise<SendResult>(() => {}) }
     const reply = { conversationId: conv.id!, externalConversationId: conv.externalId, body: 'Synthetic reply' }
-    const result = await deliverOutbound(stored.value, reply, hanging as never, 10)
-    expect(result.status).toBe('failed')
-    expect(findRow(stored.value.id)?.status).toBe('failed')
-    expect(events.at(-1)?.payload).toEqual({ messageId: stored.value.id, status: 'failed' })
+    return { conv, message: stored.value, reply }
+  }
+
+  it('marks the row unconfirmed when the adapter does not answer before the timeout', async () => {
+    const { message, reply } = store()
+    const result = await deliverOutbound(message, reply, hanging as never, 10)
+    expect(result.status).toBe('unconfirmed')
+    expect(findRow(message.id)?.status).toBe('unconfirmed')
+    expect(events.at(-1)?.payload).toEqual({ messageId: message.id, status: 'unconfirmed' })
+  })
+
+  it('leaves a row the platform echo already confirmed as sent when the timeout fires later', async () => {
+    const { conv, message, reply } = store()
+    const delivery = deliverOutbound(message, reply, hanging as never, 10)
+    ingest([
+      {
+        externalId: 'echo-1',
+        externalConversationId: conv.externalId,
+        platform: 'zaapi',
+        channel: 'whatsapp',
+        direction: 'outbound',
+        senderName: null,
+        body: 'Synthetic reply',
+        hasAttachment: false,
+        sentAt: new Date(5_000),
+      },
+    ])
+    expect(await delivery).toMatchObject({ status: 'sent', externalId: 'echo-1' })
+    expect(findRow(message.id)).toMatchObject({ status: 'sent', externalId: 'echo-1' })
+    expect(events.map((e) => e.payload.status)).toEqual(['pending', 'sent'])
   })
 })

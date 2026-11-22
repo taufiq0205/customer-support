@@ -52,7 +52,7 @@ export const messages = sqliteTable(
     senderName: text('sender_name'),
     body: text('body').notNull(),
     hasAttachment: integer('has_attachment').notNull().default(0),
-    status: text('status', { enum: ['pending', 'sent', 'failed', 'delivered'] }).notNull(),
+    status: text('status', { enum: ['pending', 'sent', 'unconfirmed', 'failed', 'delivered'] }).notNull(),
     sentAt: integer('sent_at'),
     createdAt: integer('created_at').notNull(),
   },
