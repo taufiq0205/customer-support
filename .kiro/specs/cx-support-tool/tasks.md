@@ -331,7 +331,7 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Mock missing endpoint config; assert button is hidden
     - _Requirements: 12.4–12.9_
 
-- [ ] 18. Checkpoint — Verify reply and AI suggestion flows
+- [x] 18. Checkpoint — Verify reply and AI suggestion flows
   - Confirm a full reply round-trip (compose → send → SSE update) and AI suggestion (request → redacted prompt → draft inserted) both work end-to-end with synthetic fixtures.
   - Ensure all tests pass, ask the user if questions arise.
 
