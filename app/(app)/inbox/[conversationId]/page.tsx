@@ -1,6 +1,8 @@
 import { ArrowLeftIcon, PaperclipIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ComposeArea } from '@/components/compose/ComposeArea'
+import { RetryButton } from '@/components/compose/RetryButton'
 import { Badge } from '@/components/ui/badge'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
 import { Button } from '@/components/ui/button'
@@ -67,6 +69,9 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
                         <MessageFooter className="gap-2">
                           {m.sentAt !== null && <time dateTime={new Date(m.sentAt).toISOString()}>{formatTime(m.sentAt)}</time>}
                           {outbound && <Badge variant={DELIVERY_VARIANTS[m.status]}>{DELIVERY_LABELS[m.status]}</Badge>}
+                          {outbound && m.body && (m.status === 'failed' || m.status === 'unconfirmed') && (
+                            <RetryButton conversationId={c.id} body={m.body} unconfirmed={m.status === 'unconfirmed'} />
+                          )}
                         </MessageFooter>
                       </MessageContent>
                     </Message>
@@ -78,6 +83,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
+      <ComposeArea conversationId={c.id} />
     </div>
   )
 }
