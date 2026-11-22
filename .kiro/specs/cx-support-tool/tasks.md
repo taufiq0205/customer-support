@@ -91,18 +91,18 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
   - Ensure migration runs, the seed script creates users, login sets a cookie, proxy redirects unauthenticated requests to `/login`, and logout clears the cookie.
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Implement adapter types and Zaapi adapter
-  - [ ] 6.1 Create `lib/adapters/types.ts`
+- [x] 6. Implement adapter types and Zaapi adapter
+  - [x] 6.1 Create `lib/adapters/types.ts`
     - Define and export `IncomingMessage`, `OutboundReply`, `SendResult`, `WebhookVerificationResult`, and `PlatformAdapter` interfaces exactly as specified in the design
     - _Requirements: 2.5, 2.6, 3.5, 3.6_
 
-  - [ ] 6.2 Create `lib/adapters/zaapi.ts` implementing `PlatformAdapter`
+  - [x] 6.2 Create `lib/adapters/zaapi.ts` implementing `PlatformAdapter`
     - `verifyWebhook(req)`: read HMAC signature from request header; compute HMAC-SHA256 over raw body using `ZAAPI_WEBHOOK_SECRET`; return `{ valid, rawPayload }`
     - `parseWebhook(rawPayload)`: parse Zaapi JSON envelope; map to `IncomingMessage[]`; set `platform: 'zaapi'`; never fetch attachment URLs
     - `sendReply(reply)`: call Zaapi REST API with `ZAAPI_API_KEY` from env; return `SendResult`; timeout after 30 s
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 10.3, 10.5_
 
-  - [ ] 6.3 Write unit tests for `zaapi.ts`
+  - [x] 6.3 Write unit tests for `zaapi.ts`
     - `verifyWebhook` returns `valid: true` for a correctly signed payload and `valid: false` for a tampered one
     - `parseWebhook` maps known fixture JSON to the expected `IncomingMessage` shape with `platform: 'zaapi'`
     - `sendReply` with a mocked HTTP client returns `{ status: 'sent' }` on 200 and `{ status: 'failed' }` on 4xx/5xx
