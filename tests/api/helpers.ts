@@ -10,6 +10,7 @@ const { createSessionToken, SESSION_COOKIE } = await import('@/lib/auth/session'
 const listRoute = await import('@/app/api/conversations/route')
 const detailRoute = await import('@/app/api/conversations/[id]/route')
 const statusRoute = await import('@/app/api/conversations/[id]/status/route')
+const messagesRoute = await import('@/app/api/conversations/[id]/messages/route')
 
 export type ConvRow = typeof conversations.$inferInsert
 
@@ -78,6 +79,13 @@ export async function detail(session: Session | null, id: string) {
 export async function patchStatus(session: Session | null, id: string, body: string) {
   return statusRoute.PATCH(
     new Request(`${BASE}/${id}/status`, { method: 'PATCH', body, headers: await headers(session) }),
+    { params: Promise.resolve({ id }) },
+  )
+}
+
+export async function postMessage(session: Session | null, id: string, body: string) {
+  return messagesRoute.POST(
+    new Request(`${BASE}/${id}/messages`, { method: 'POST', body, headers: await headers(session) }),
     { params: Promise.resolve({ id }) },
   )
 }

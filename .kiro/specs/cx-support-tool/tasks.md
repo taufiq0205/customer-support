@@ -248,14 +248,14 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate arbitrary conversations; call the list endpoint; assert every returned item has `customerName` or `customerIdentifier`, `channel`, `platform`, `lastMessageAt`, and `lastMessagePreview`
     - _Requirements: 1.4_
 
-- [ ] 13. Build reply send route and messages API
-  - [ ] 13.1 Create `app/api/conversations/[id]/messages/route.ts`
+- [x] 13. Build reply send route and messages API
+  - [x] 13.1 Create `app/api/conversations/[id]/messages/route.ts`
     - `POST`: read session; read conversation (enforce ownership); call `MessageSvc.storeOutbound`; return 202
     - After response: call platform adapter `sendReply`; call `MessageSvc.updateMessageStatus` with result (`sent` or `failed`); emit SSE event
     - On timeout (30 s): mark `failed`; allow agent retry
     - _Requirements: 5.2, 5.3, 5.4, 2.3, 2.4, 3.3, 3.4_
 
-  - [ ]* 13.2 Write integration tests for message send
+  - [x]* 13.2 Write integration tests for message send
     - Mock platform adapter returning success; assert message status transitions `pending → sent` and SSE event emitted
     - Mock adapter returning failure; assert `failed` status and inline error returned
     - Mock adapter timing out; assert `failed` status
