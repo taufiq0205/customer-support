@@ -229,7 +229,7 @@ describe('message service', () => {
   describe('platform echo of a reply sent from this app', () => {
     const echo = (body = 'Thanks, checking now') =>
       incoming({ externalId: 'echo-1', direction: 'outbound', senderName: null, body })
-    function stored(status?: 'unconfirmed') {
+    function stored(status?: 'unconfirmed' | 'sent') {
       const [id] = svc.ingest([incoming()]).created
       const out = msgSvc.storeOutbound(id, 'Thanks, checking now', agentA)
       if (!out.ok) throw new Error('store failed')
@@ -251,6 +251,12 @@ describe('message service', () => {
       const { id, messageId } = stored()
       svc.ingest([echo()])
       svc.ingest([echo()]) // duplicate webhook delivery
+      expect(outbound(id)).toEqual([expect.objectContaining({ id: messageId, status: 'sent', externalId: 'echo-1' })])
+    })
+
+    it('settles a Zaapi row already sent without a platform id', () => {
+      const { id, messageId } = stored('sent')
+      svc.ingest([echo()])
       expect(outbound(id)).toEqual([expect.objectContaining({ id: messageId, status: 'sent', externalId: 'echo-1' })])
     })
 

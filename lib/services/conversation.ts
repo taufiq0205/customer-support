@@ -99,7 +99,8 @@ export function ingest(incoming: IncomingMessage[]): { created: string[]; update
               eq(messages.conversationId, conv.id),
               eq(messages.direction, 'outbound'),
               like(messages.externalId, 'local:%'),
-              inArray(messages.status, ['pending', 'unconfirmed']),
+              // 'sent' included: Zaapi confirms a send without an id, so its row keeps the local: placeholder.
+              inArray(messages.status, ['pending', 'sent', 'unconfirmed']),
               eq(messages.body, body),
             ),
           )
