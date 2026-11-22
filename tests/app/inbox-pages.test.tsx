@@ -20,11 +20,12 @@ vi.mock('next/navigation', () => ({
 const { default: AppLayout } = await import('@/app/(app)/layout')
 const { default: InboxPage } = await import('@/app/(app)/inbox/page')
 const { default: ThreadPage } = await import('@/app/(app)/inbox/[conversationId]/page')
+const { AppProvider } = await import('@/app/(app)/app-provider')
 
 const inbox = async (query: Record<string, string> = {}) =>
   renderToStaticMarkup(await InboxPage({ searchParams: Promise.resolve(query) }))
 const thread = async (conversationId: string) =>
-  renderToStaticMarkup(await ThreadPage({ params: Promise.resolve({ conversationId }) }))
+  renderToStaticMarkup(<AppProvider session={supervisor}>{await ThreadPage({ params: Promise.resolve({ conversationId }) })}</AppProvider>)
 
 let seq = 0
 function insertMessage(conversationId: string, over: Partial<typeof messages.$inferInsert>) {
@@ -57,6 +58,7 @@ describe('app layout', () => {
     expect(html).toContain('>agent<')
     expect(html).toContain('href="/inbox"')
     expect(html).toContain('<p>child</p>')
+    expect(html).toContain('aria-label="No unread notifications"')
   })
 
   it('redirects to login without a trusted session header', async () => {

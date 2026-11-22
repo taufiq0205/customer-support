@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { currentUser } from '@/lib/auth/current-user'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
-import { AppProvider, LogoutButton } from './app-provider'
+import { AppProvider, LogoutButton, NotificationBadge } from './app-provider'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await currentUser()
@@ -27,6 +27,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </Button>
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            <NotificationBadge />
             <span className="text-sm">{user?.displayName ?? session.userId}</span>
             <Badge variant="secondary">{session.role}</Badge>
             <LogoutButton />

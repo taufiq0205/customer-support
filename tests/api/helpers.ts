@@ -13,6 +13,7 @@ const statusRoute = await import('@/app/api/conversations/[id]/status/route')
 const messagesRoute = await import('@/app/api/conversations/[id]/messages/route')
 const suggestRoute = await import('@/app/api/conversations/[id]/ai-suggest/route')
 const assignRoute = await import('@/app/api/conversations/[id]/assign/route')
+const notificationsRoute = await import('@/app/api/notifications/route')
 
 export type ConvRow = typeof conversations.$inferInsert
 
@@ -105,4 +106,14 @@ export async function postAssign(session: Session | null, id: string, body: stri
     new Request(`${BASE}/${id}/assign`, { method: 'POST', body, headers: await headers(session) }),
     { params: Promise.resolve({ id }) },
   )
+}
+
+const NOTIFICATIONS = 'http://127.0.0.1/api/notifications'
+
+export async function getNotifications(session: Session | null) {
+  return notificationsRoute.GET(new Request(NOTIFICATIONS, { headers: await headers(session) }))
+}
+
+export async function patchNotifications(session: Session | null, body: string) {
+  return notificationsRoute.PATCH(new Request(NOTIFICATIONS, { method: 'PATCH', body, headers: await headers(session) }))
 }

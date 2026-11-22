@@ -18,6 +18,7 @@ import {
 import { readAIConfig } from '@/lib/adapters/ai'
 import { currentUser } from '@/lib/auth/current-user'
 import { getConversation, type Message as ThreadMessage } from '@/lib/services/conversation'
+import { ClearConversationNotifications } from '../../app-provider'
 import { CHANNEL_LABELS, DELIVERY_LABELS, formatTime, PLATFORM_LABELS, STATUS_LABELS } from '../labels'
 
 const DELIVERY_VARIANTS: Record<ThreadMessage['status'], 'secondary' | 'outline' | 'destructive'> = {
@@ -38,6 +39,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 p-4">
+      <ClearConversationNotifications conversationId={c.id} />
       <header className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" size="icon-sm" render={<Link href="/inbox" aria-label="Back to inbox" />} nativeButton={false}>
           <ArrowLeftIcon />
