@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, like, lte, or, sql, type SQL } from 'drizzle-orm'
 import { v4 as uuid } from 'uuid'
-import type { IncomingMessage } from '@/lib/adapters/types'
+import { CHANNELS, PLATFORMS, type IncomingMessage } from '@/lib/adapters/types'
 import type { Session } from '@/lib/auth/session'
 import { db } from '@/lib/db'
 import { conversationHistory, conversations, messages } from '@/lib/db/schema'
@@ -30,6 +30,35 @@ export type ConversationFilters = {
   cursor?: string
   limit?: number // default 50
   now?: number // ms, default Date.now()
+}
+
+const ENUM_PARAMS: Record<'status' | 'platform' | 'channel', readonly string[]> = {
+  status: Object.keys(TRANSITIONS),
+  platform: PLATFORMS,
+  channel: CHANNELS,
+}
+
+// Invalid enum values are left out of `filters`; `invalidField` names the first one so the API can reject it.
+export function parseConversationQuery(
+  query: URLSearchParams,
+  session: Session,
+): { filters: ConversationFilters; invalidField?: string } {
+  const filters: ConversationFilters = {
+    search: query.get('search') || undefined,
+    cursor: query.get('page') ?? undefined,
+  }
+  let invalidField: string | undefined
+  for (const [field, allowed] of Object.entries(ENUM_PARAMS)) {
+    const value = query.get(field)
+    if (!value) continue
+    if (allowed.includes(value)) Object.assign(filters, { [field]: value })
+    else invalidField ??= field
+  }
+  const assignedTo = query.get('assignedTo')
+  if (assignedTo) {
+    filters.assignedAgentId = assignedTo === 'unassigned' ? null : assignedTo === 'me' ? session.userId : assignedTo
+  }
+  return { filters, invalidField }
 }
 
 type Pending = [SSEEvent, string | undefined]

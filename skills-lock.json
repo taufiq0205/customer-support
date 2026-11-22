@@ -7,6 +7,13 @@
       "sourceType": "github",
       "skillPath": "skills/security-audit/SKILL.md",
       "computedHash": "8513eb3b2c39b8d05ef4f47b32ef4d18280b93a5efb91d8df6272f7435034af5"
+    },
+    "shadcn": {
+      "source": "shadcn-ui/ui",
+      "commit": "bfa64ff4d1cb7317d2403ecb176df6826d4caffc",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "388962d16c7a4f13aaeee0d8f128e50a87df8553d42ef7988c39c0e1c74a40e8"
     }
   }
 }
