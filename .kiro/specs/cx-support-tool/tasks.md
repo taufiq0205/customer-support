@@ -295,16 +295,16 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Wire up the composed reply to the message send route; update the thread on SSE `message.created` event
     - _Requirements: 5.1, 5.2_
 
-- [ ] 16. Implement redaction service
-  - [ ] 16.1 Create `lib/services/redaction.ts`
+- [x] 16. Implement redaction service
+  - [x] 16.1 Create `lib/services/redaction.ts`
     - Implement pure `redact(text: string): string` applying patterns in order: email → `[EMAIL]`, Malaysian/SG phone → `[PHONE]`, Photobook order number → `[ORDER]`, street address / postcode → `[ADDRESS]`, customer name (escaped) → `[NAME]`
     - _Requirements: 12.6_
 
-  - [ ]* 16.2 Write unit tests for `redaction.ts`
+  - [x]* 16.2 Write unit tests for `redaction.ts`
     - Fixture for each PII type, mixed input with multiple types, and a string containing no PII (must return unchanged)
     - _Requirements: 12.6_
 
-  - [ ]* 16.3 Write property test — Property 19: PII redaction removes all recognised patterns
+  - [x]* 16.3 Write property test — Property 19: PII redaction removes all recognised patterns
     - **Property 19: PII redaction removes all recognised patterns**
     - **Validates: Requirements 12.6**
     - Generate strings containing one or more recognised PII tokens (email, phone, order, name); assert no original PII token survives and each replaced position contains the appropriate label
