@@ -33,7 +33,9 @@ describe('session', () => {
 
   it('rejects a tampered token', async () => {
     const cookie = pair(await createSession('user-1', 'agent'))
-    const flipped = cookie.slice(0, -1) + (cookie.endsWith('A') ? 'B' : 'A')
+    // Flip the signature's first char: the last base64url char holds padding bits, so changing it can leave the bytes unchanged.
+    const i = cookie.lastIndexOf('.') + 1
+    const flipped = cookie.slice(0, i) + (cookie[i] === 'A' ? 'B' : 'A') + cookie.slice(i + 1)
     expect(await getSession(req(flipped))).toBeNull()
   })
 
