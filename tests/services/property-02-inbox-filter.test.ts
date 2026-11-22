@@ -2,6 +2,7 @@
 // Validates: Requirements 1.5
 import fc from 'fast-check'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { CHANNELS, PLATFORMS } from '@/lib/adapters/types'
 import type { Session } from '@/lib/auth/session'
 
 process.env.DATABASE_URL = ':memory:'
@@ -12,6 +13,7 @@ const svc = await import('@/lib/services/conversation')
 
 type Conv = typeof conversations.$inferInsert
 const AGENTS = ['agent-a', 'agent-b']
+const STATUSES = ['open', 'snoozed', 'resolved'] as const
 const supervisor: Session = { userId: 'sup', role: 'supervisor' }
 
 beforeAll(() => {
@@ -31,18 +33,18 @@ beforeAll(() => {
 })
 
 const convArb = fc.record({
-  status: fc.constantFrom('open', 'snoozed', 'resolved'),
+  status: fc.constantFrom(...STATUSES),
   assignedAgentId: fc.constantFrom<string | null>(null, ...AGENTS),
-  platform: fc.constantFrom('zaapi', 'respond_io'),
-  channel: fc.constantFrom('whatsapp', 'facebook', 'instagram', 'line', 'shopee', 'lazada', 'tiktok', 'widget'),
+  platform: fc.constantFrom(...PLATFORMS),
+  channel: fc.constantFrom(...CHANNELS),
   lastMessageAt: fc.option(fc.integer({ min: 1, max: 20 }), { nil: null }), // small range forces ties
 })
 const filterArb = fc.record(
   {
-    status: fc.constantFrom('open', 'snoozed', 'resolved'),
+    status: fc.constantFrom(...STATUSES),
     assignedAgentId: fc.constantFrom<string | null>(null, ...AGENTS),
-    platform: fc.constantFrom('zaapi', 'respond_io'),
-    channel: fc.constantFrom('whatsapp', 'facebook', 'instagram', 'line', 'shopee', 'lazada', 'tiktok', 'widget'),
+    platform: fc.constantFrom(...PLATFORMS),
+    channel: fc.constantFrom(...CHANNELS),
   },
   { requiredKeys: [] },
 )

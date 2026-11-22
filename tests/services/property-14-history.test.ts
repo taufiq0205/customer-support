@@ -55,7 +55,7 @@ it('records every valid transition and nothing for invalid ones', () => {
           }
           expect(rowsOf(id).length).toBe(before)
 
-          const opts = svc.TRANSITIONS[status]
+          const opts: readonly (typeof ALL)[number][] = svc.TRANSITIONS[status]
           const to = opts[s.pick % opts.length]
           const r = svc.changeStatus(id, to, sup, undefined, to === 'snoozed' ? Date.now() + 1e7 : undefined)
           expect(r.ok).toBe(true)
