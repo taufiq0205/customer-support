@@ -88,7 +88,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ convers
           <MessageScrollerButton />
         </MessageScroller>
       </MessageScrollerProvider>
-      <ComposeArea conversationId={c.id} aiEnabled={readAIConfig() !== null} />
+      <ComposeArea conversationId={c.id} aiEnabled={readAIConfig() !== null} customerName={c.customerName} />
     </div>
   )
 }
