@@ -439,12 +439,12 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Date boundaries (start-of-day, end-of-day in UTC+8), empty range, single-conversation range, low-volume indicator threshold
     - _Requirements: 8.3, 8.5_
 
-- [ ] 23. Implement AI and settings pages
-  - [ ] 23.1 Create `app/api/settings/ai/route.ts`
+- [x] 23. Implement AI and settings pages
+  - [x] 23.1 Create `app/api/settings/ai/route.ts`
     - `GET`/`PUT`: supervisor-only; read and write AI endpoint config to env-backed storage (write to a local `.env.local` file that is gitignored); return 403 for agents
     - _Requirements: 12.1, 12.2, 9.4_
 
-  - [ ] 23.2 Create the settings page at `app/(app)/settings/page.tsx`
+  - [x] 23.2 Create the settings page at `app/(app)/settings/page.tsx`
     - Server Component (supervisor-only); form for AI endpoint URL, model name, and API key; masked input for API key; save via Server Action; show saved state confirmation
     - _Requirements: 12.1, 12.2_
 
