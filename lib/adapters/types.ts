@@ -1,10 +1,10 @@
 // Adapters import only this file and the standard library; never lib/db or services.
 
-export const PLATFORMS = ['zaapi', 'respond_io'] as const
+export const PLATFORMS = ['zaapi', 'respond_io', 'telegram'] as const
 export type Platform = (typeof PLATFORMS)[number]
 
 // Mirrors the conversations.channel enum in lib/db/schema.ts.
-export const CHANNELS = ['whatsapp', 'facebook', 'instagram', 'line', 'shopee', 'lazada', 'tiktok', 'widget'] as const
+export const CHANNELS = ['whatsapp', 'facebook', 'instagram', 'line', 'shopee', 'lazada', 'tiktok', 'widget', 'telegram'] as const
 export type Channel = (typeof CHANNELS)[number]
 
 export interface IncomingMessage {

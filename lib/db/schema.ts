@@ -12,7 +12,7 @@ export const users = sqliteTable('users', {
 
 export const platformConfigs = sqliteTable('platform_configs', {
   id: text('id').primaryKey(),
-  platform: text('platform', { enum: ['zaapi', 'respond_io'] }).notNull(),
+  platform: text('platform', { enum: ['zaapi', 'respond_io', 'telegram'] }).notNull(),
   webhookSecret: text('webhook_secret'),
   isActive: integer('is_active').notNull().default(1),
 })
@@ -22,9 +22,9 @@ export const conversations = sqliteTable(
   {
     id: text('id').primaryKey(),
     externalId: text('external_id').notNull(),
-    platform: text('platform', { enum: ['zaapi', 'respond_io'] }).notNull(),
+    platform: text('platform', { enum: ['zaapi', 'respond_io', 'telegram'] }).notNull(),
     channel: text('channel', {
-      enum: ['whatsapp', 'facebook', 'instagram', 'line', 'shopee', 'lazada', 'tiktok', 'widget'],
+      enum: ['whatsapp', 'facebook', 'instagram', 'line', 'shopee', 'lazada', 'tiktok', 'widget', 'telegram'],
     }).notNull(),
     status: text('status', { enum: ['open', 'snoozed', 'resolved'] }).notNull().default('open'),
     snoozedUntil: integer('snoozed_until'),

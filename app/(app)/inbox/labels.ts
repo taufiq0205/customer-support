@@ -1,7 +1,7 @@
 import type { Channel, Platform } from '@/lib/adapters/types'
 import type { Message, Status } from '@/lib/services/conversation'
 
-export const PLATFORM_LABELS: Record<Platform, string> = { zaapi: 'Zaapi', respond_io: 'respond.io' }
+export const PLATFORM_LABELS: Record<Platform, string> = { zaapi: 'Zaapi', respond_io: 'respond.io', telegram: 'Telegram' }
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
   whatsapp: 'WhatsApp',
@@ -12,6 +12,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   lazada: 'Lazada',
   tiktok: 'TikTok',
   widget: 'Web widget',
+  telegram: 'Telegram',
 }
 
 export const STATUS_LABELS: Record<Status, string> = { open: 'Open', snoozed: 'Snoozed', resolved: 'Resolved' }

@@ -8,7 +8,8 @@
     "start": "next start --hostname 127.0.0.1",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "seed:users": "tsx scripts/seed-users.ts"
+    "seed:users": "tsx scripts/seed-users.ts",
+    "telegram:poll": "tsx --env-file=.env.local scripts/telegram-poll.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
