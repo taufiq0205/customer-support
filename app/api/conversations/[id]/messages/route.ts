@@ -1,12 +1,13 @@
 import { after } from 'next/server'
 import { respondIoAdapter } from '@/lib/adapters/respond-io'
+import { telegramAdapter } from '@/lib/adapters/telegram'
 import type { Platform, PlatformAdapter } from '@/lib/adapters/types'
 import { zaapiAdapter } from '@/lib/adapters/zaapi'
 import { getSession } from '@/lib/auth/session'
 import { findAccessible } from '@/lib/services/conversation'
 import { deliverOutbound, findUnconfirmed, storeOutbound } from '@/lib/services/message'
 
-const ADAPTERS: Record<Platform, PlatformAdapter> = { zaapi: zaapiAdapter, respond_io: respondIoAdapter }
+const ADAPTERS: Record<Platform, PlatformAdapter> = { zaapi: zaapiAdapter, respond_io: respondIoAdapter, telegram: telegramAdapter }
 
 const notFound = () => Response.json({ error: 'not_found' }, { status: 404 })
 

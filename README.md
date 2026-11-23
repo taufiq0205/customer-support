@@ -32,6 +32,7 @@ Set these in `.env.local`. See `.env.example` for descriptions.
 | `ZAAPI_WEBHOOK_SECRET`, `ZAAPI_API_KEY` | For Zaapi | Webhooks return 401, or 503 on message events; replies fail |
 | `RESPOND_IO_WEBHOOK_SECRET` | For respond.io | Webhooks return 401 |
 | `RESPOND_IO_API_KEY` | To send respond.io replies | Replies fail |
+| `TELEGRAM_BOT_TOKEN` | For the Telegram test channel | Telegram webhooks return 401; replies fail |
 | `AI_ENDPOINT_URL`, `AI_MODEL_NAME`, `AI_API_KEY` | No | AI suggestions are off |
 
 ## Other commands
@@ -41,6 +42,7 @@ Set these in `.env.local`. See `.env.example` for descriptions.
 | `npm run build && npm start` | Production build, also on `127.0.0.1:3000` |
 | `npm test` | Vitest, in-memory database |
 | `npm run test:watch` | Vitest in watch mode |
+| `npm run telegram:poll` | Forwards Telegram bot messages to the local app |
 
 ## Testing without live platforms
 
@@ -52,6 +54,21 @@ Set these in `.env.local`. See `.env.example` for descriptions.
   `tests/webhooks/ingestion.test.ts`, which stubs `fetch`.
 - `tests/webhooks/helpers.ts` has signers and sample payloads for both
   platforms.
+
+## Live testing with Telegram
+
+Telegram is a real test channel. Message the bot as a customer and reply from
+the inbox.
+
+1. Put the bot token from @BotFather in `TELEGRAM_BOT_TOKEN` in `.env.local`.
+2. Run `npm run dev`.
+3. In a second terminal, run `npm run telegram:poll`.
+4. Send the bot a private message. It appears in the inbox. Replies sent from
+   the thread go back to the Telegram chat.
+
+The poller uses `getUpdates` long polling, so the app stays on `127.0.0.1` with
+no tunnel. It removes any webhook set on the bot, because Telegram allows only
+one delivery mode. Only private chats are ingested.
 
 ## Data handling
 
