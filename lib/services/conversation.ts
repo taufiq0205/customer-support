@@ -213,7 +213,7 @@ export function ingest(incoming: IncomingMessage[]): { created: string[]; update
 }
 
 // Snooze expiry is applied lazily on read, so no scheduler is needed. Running it twice is a no-op.
-function wakeExpiredSnoozes(now: number, id?: string) {
+export function wakeExpiredSnoozes(now: number, id?: string) {
   const events: Pending[] = []
   db.transaction((tx) => {
     const woken = tx
