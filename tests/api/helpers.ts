@@ -17,6 +17,7 @@ const notificationsRoute = await import('@/app/api/notifications/route')
 const cannedRoute = await import('@/app/api/canned-responses/route')
 const cannedItemRoute = await import('@/app/api/canned-responses/[id]/route')
 const reportsRoute = await import('@/app/api/reports/route')
+const aiSettingsRoute = await import('@/app/api/settings/ai/route')
 
 export type ConvRow = typeof conversations.$inferInsert
 
@@ -145,4 +146,14 @@ export async function deleteCanned(session: Session | null, id: string) {
 
 export async function reports(session: Session | null, query = '') {
   return reportsRoute.GET(new Request(`http://127.0.0.1/api/reports${query}`, { headers: await headers(session) }))
+}
+
+const AI_SETTINGS = 'http://127.0.0.1/api/settings/ai'
+
+export async function getAISettings(session: Session | null) {
+  return aiSettingsRoute.GET(new Request(AI_SETTINGS, { headers: await headers(session) }))
+}
+
+export async function putAISettings(session: Session | null, body: string) {
+  return aiSettingsRoute.PUT(new Request(AI_SETTINGS, { method: 'PUT', body, headers: await headers(session) }))
 }
