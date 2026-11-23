@@ -448,13 +448,13 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Server Component (supervisor-only); form for AI endpoint URL, model name, and API key; masked input for API key; save via Server Action; show saved state confirmation
     - _Requirements: 12.1, 12.2_
 
-- [ ] 24. Enforce role-based access control at the API layer
-  - [ ] 24.1 Add role guards to all supervisor-only routes
+- [x] 24. Enforce role-based access control at the API layer
+  - [x] 24.1 Add role guards to all supervisor-only routes
     - Routes: `/api/reports`, `/api/settings/ai`, `/api/canned-responses` (write operations), `/api/conversations/[id]/assign` (supervisor reassignment)
     - Each handler reads `x-auth-user` header; returns 403 if `role !== 'supervisor'` for guarded operations
     - _Requirements: 9.3, 9.4_
 
-  - [ ]* 24.2 Write property test — Property 16: agent role cannot access supervisor-only endpoints
+  - [x]* 24.2 Write property test — Property 16: agent role cannot access supervisor-only endpoints
     - **Property 16: Agent role cannot access supervisor-only endpoints**
     - **Validates: Requirements 9.3, 9.4**
     - Generate valid agent sessions and supervisor-only route strings; assert all responses have HTTP status 403
