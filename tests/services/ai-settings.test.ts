@@ -90,7 +90,7 @@ describe('saveAISettings', () => {
 
 describe('aiSettingsView', () => {
   it('reports whether a key is set without returning it', () => {
-    const view = aiSettingsView({ AI_ENDPOINT_URL: 'http://localhost:11434', AI_MODEL_NAME: 'm', AI_API_KEY: 'synthetic-key' })
+    const view = aiSettingsView({ NODE_ENV: 'test', AI_ENDPOINT_URL: 'http://localhost:11434', AI_MODEL_NAME: 'm', AI_API_KEY: 'synthetic-key' })
     expect(view).toEqual({ endpointUrl: 'http://localhost:11434', modelName: 'm', apiKeySet: true })
     expect(JSON.stringify(view)).not.toContain('synthetic-key')
   })
