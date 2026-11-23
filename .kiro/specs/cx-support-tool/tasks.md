@@ -413,29 +413,29 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate arbitrary body strings containing `{{customer_name}}` and arbitrary customer names; assert no literal `{{customer_name}}` remains after substitution
     - _Requirements: 6.5_
 
-- [ ] 22. Implement supervisor reports
-  - [ ] 22.1 Create `lib/services/report.ts`
+- [x] 22. Implement supervisor reports
+  - [x] 22.1 Create `lib/services/report.ts`
     - `getMetrics(from, to, filters)`: aggregate queries over `conversations` and `conversationHistory`
     - Compute: total received (conversations created in range), total resolved (status = `resolved`), average first-response time (first agent message after first inbound), average resolution time (creation to resolved timestamp), counts of open / queue / snoozed
     - Support breakdown by `agentId`, `channel`, `platform`; show low-volume indicator when `resolvedCount < 10`
     - Use UTC+8 (Malaysia time) for ISO-week date boundaries
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ] 22.2 Create `app/api/reports/route.ts`
+  - [x] 22.2 Create `app/api/reports/route.ts`
     - `GET`: verify `role === 'supervisor'`; return 403 otherwise; parse `from`, `to`, `agentId`, `channel`, `platform` query params; delegate to `ReportSvc.getMetrics`
     - _Requirements: 8.1, 8.2, 8.3, 9.4_
 
-  - [ ] 22.3 Create the reports page at `app/(app)/reports/page.tsx`
+  - [x] 22.3 Create the reports page at `app/(app)/reports/page.tsx`
     - Server Component (supervisor-only; redirect to inbox if agent); render metric cards; date range picker and filter selects as Client Components; live summary (open/queue/snoozed counts) updates on SSE events
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ]* 22.4 Write property test — Property 15: report totals match underlying data
+  - [x]* 22.4 Write property test — Property 15: report totals match underlying data
     - **Property 15: Report totals match the underlying data**
     - **Validates: Requirements 8.1**
     - Generate arbitrary conversation sets with various `createdAt` values and statuses; call `getMetrics`; assert reported totals equal the counts computed directly from the generated data
     - _Requirements: 8.1_
 
-  - [ ]* 22.5 Write unit tests for report aggregation edge cases
+  - [x]* 22.5 Write unit tests for report aggregation edge cases
     - Date boundaries (start-of-day, end-of-day in UTC+8), empty range, single-conversation range, low-volume indicator threshold
     - _Requirements: 8.3, 8.5_
 

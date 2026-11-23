@@ -26,3 +26,14 @@ export const DELIVERY_LABELS: Record<Message['status'], string> = {
 
 const timestamp = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
 export const formatTime = (ms: number) => timestamp.format(ms)
+
+// Two largest units, e.g. 4m 5s or 2d 3h; an em dash when there is nothing to average.
+export function formatDuration(ms: number | null) {
+  if (ms === null) return '—'
+  const s = Math.round(ms / 1000)
+  const [m, h, d] = [Math.floor(s / 60), Math.floor(s / 3600), Math.floor(s / 86400)]
+  if (s < 60) return `${s}s`
+  if (m < 60) return `${m}m ${s % 60}s`
+  if (h < 24) return `${h}h ${m % 60}m`
+  return `${d}d ${h % 24}h`
+}

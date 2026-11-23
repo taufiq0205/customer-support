@@ -57,8 +57,13 @@ describe('app layout', () => {
     expect(html).toContain('agent-a')
     expect(html).toContain('>agent<')
     expect(html).toContain('href="/inbox"')
+    expect(html).not.toContain('href="/reports"')
     expect(html).toContain('<p>child</p>')
     expect(html).toContain('aria-label="No unread notifications"')
+  })
+
+  it('links supervisors to reports', async () => {
+    expect(renderToStaticMarkup(await AppLayout({ children: null }))).toContain('href="/reports"')
   })
 
   it('redirects to login without a trusted session header', async () => {
