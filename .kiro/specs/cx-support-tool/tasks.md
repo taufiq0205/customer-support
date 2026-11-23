@@ -380,34 +380,34 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Client Component; polls `GET /api/notifications` on mount and on SSE `notification.created` event; shows unread count badge
     - _Requirements: 4.2_
 
-- [ ] 21. Implement canned responses
-  - [ ] 21.1 Create `lib/services/canned-response.ts`
+- [x] 21. Implement canned responses
+  - [x] 21.1 Create `lib/services/canned-response.ts`
     - `searchByPrefix(prefix)`: return responses whose `shortcode` starts with `prefix` (case-insensitive)
     - `substitutePlaceholder(body, customerName)`: replace all occurrences of `{{customer_name}}` with the display name
     - CRUD functions: `create`, `update`, `delete`, `list` — all require supervisor role
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ] 21.2 Create canned response API routes under `app/api/canned-responses/`
+  - [x] 21.2 Create canned response API routes under `app/api/canned-responses/`
     - `GET /api/canned-responses` — list; `POST` — create (supervisor)
     - `PUT /api/canned-responses/[id]` — update (supervisor); `DELETE` — delete (supervisor)
     - _Requirements: 6.2_
 
-  - [ ] 21.3 Add canned response picker to `ComposeArea`
+  - [x] 21.3 Add canned response picker to `ComposeArea`
     - Detect `/` prefix in the compose text; call `GET /api/canned-responses?prefix=…`; render dropdown; on selection insert substituted body text, replacing `{{customer_name}}` with current conversation's customer name
     - _Requirements: 6.3, 6.4, 6.5_
 
-  - [ ]* 21.4 Write unit tests for canned response service
+  - [x]* 21.4 Write unit tests for canned response service
     - `searchByPrefix`: prefix match, case-insensitive match, no match, empty prefix
     - `substitutePlaceholder`: single occurrence, multiple occurrences, no token present (body unchanged)
     - _Requirements: 6.3, 6.5_
 
-  - [ ]* 21.5 Write property test — Property 10: canned response shortcode filter returns exact prefix matches
+  - [x]* 21.5 Write property test — Property 10: canned response shortcode filter returns exact prefix matches
     - **Property 10: Canned response shortcode filter returns exact prefix matches**
     - **Validates: Requirements 6.3**
     - Generate arbitrary shortcode prefixes and canned response libraries; assert the filtered result contains exactly those responses whose shortcode starts with the prefix (case-insensitive) and no others
     - _Requirements: 6.3_
 
-  - [ ]* 21.6 Write property test — Property 11: canned response placeholder substitution removes the token
+  - [x]* 21.6 Write property test — Property 11: canned response placeholder substitution removes the token
     - **Property 11: Canned response placeholder substitution removes the token**
     - **Validates: Requirements 6.5**
     - Generate arbitrary body strings containing `{{customer_name}}` and arbitrary customer names; assert no literal `{{customer_name}}` remains after substitution

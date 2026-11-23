@@ -5,7 +5,7 @@ import type { Session } from '@/lib/auth/session'
 process.env.DATABASE_URL = ':memory:'
 
 export const { db, runMigrations } = await import('@/lib/db')
-export const { users, conversations, conversationHistory, messages, aiRequestLog, notifications } = await import('@/lib/db/schema')
+export const { users, conversations, conversationHistory, messages, aiRequestLog, notifications, cannedResponses } = await import('@/lib/db/schema')
 const { createSessionToken, SESSION_COOKIE } = await import('@/lib/auth/session')
 const listRoute = await import('@/app/api/conversations/route')
 const detailRoute = await import('@/app/api/conversations/[id]/route')
@@ -14,6 +14,8 @@ const messagesRoute = await import('@/app/api/conversations/[id]/messages/route'
 const suggestRoute = await import('@/app/api/conversations/[id]/ai-suggest/route')
 const assignRoute = await import('@/app/api/conversations/[id]/assign/route')
 const notificationsRoute = await import('@/app/api/notifications/route')
+const cannedRoute = await import('@/app/api/canned-responses/route')
+const cannedItemRoute = await import('@/app/api/canned-responses/[id]/route')
 
 export type ConvRow = typeof conversations.$inferInsert
 
@@ -116,4 +118,26 @@ export async function getNotifications(session: Session | null) {
 
 export async function patchNotifications(session: Session | null, body: string) {
   return notificationsRoute.PATCH(new Request(NOTIFICATIONS, { method: 'PATCH', body, headers: await headers(session) }))
+}
+
+const CANNED = 'http://127.0.0.1/api/canned-responses'
+
+export async function getCanned(session: Session | null, query = '') {
+  return cannedRoute.GET(new Request(`${CANNED}${query}`, { headers: await headers(session) }))
+}
+
+export async function postCanned(session: Session | null, body: string) {
+  return cannedRoute.POST(new Request(CANNED, { method: 'POST', body, headers: await headers(session) }))
+}
+
+export async function putCanned(session: Session | null, id: string, body: string) {
+  return cannedItemRoute.PUT(new Request(`${CANNED}/${id}`, { method: 'PUT', body, headers: await headers(session) }), {
+    params: Promise.resolve({ id }),
+  })
+}
+
+export async function deleteCanned(session: Session | null, id: string) {
+  return cannedItemRoute.DELETE(new Request(`${CANNED}/${id}`, { method: 'DELETE', headers: await headers(session) }), {
+    params: Promise.resolve({ id }),
+  })
 }
