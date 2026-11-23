@@ -16,6 +16,7 @@ const assignRoute = await import('@/app/api/conversations/[id]/assign/route')
 const notificationsRoute = await import('@/app/api/notifications/route')
 const cannedRoute = await import('@/app/api/canned-responses/route')
 const cannedItemRoute = await import('@/app/api/canned-responses/[id]/route')
+const reportsRoute = await import('@/app/api/reports/route')
 
 export type ConvRow = typeof conversations.$inferInsert
 
@@ -140,4 +141,8 @@ export async function deleteCanned(session: Session | null, id: string) {
   return cannedItemRoute.DELETE(new Request(`${CANNED}/${id}`, { method: 'DELETE', headers: await headers(session) }), {
     params: Promise.resolve({ id }),
   })
+}
+
+export async function reports(session: Session | null, query = '') {
+  return reportsRoute.GET(new Request(`http://127.0.0.1/api/reports${query}`, { headers: await headers(session) }))
 }
