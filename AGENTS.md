@@ -2,19 +2,31 @@
 
 ## Scope
 
-Support Insight is a local, single-user tool for the Photobook support lead. It imports historical Zaapi chats, labels them, and reports support trends and knowledge-base gaps. The lead applies fixes by hand.
+CX Support Tool is a multi-user support inbox for Photobook. It receives Zaapi and respond.io webhooks and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
 
-- Zaapi is the only MVP source. The available export ends on 20 Nov 2026. Ah Va does not support chat exports.
-- Keep future source adapters separate from storage and reports. Show the latest imported date in the app.
-- Keep customer messaging, bot settings changes, live sync, and multi-user hosting outside the MVP.
-- Treat the ignored X-Ray folder as separate reference material.
+- It runs on the owner's Mac. There is no hosted deployment.
+- It handles live conversations only. It does not import historical chat exports.
+- There is no live Zaapi or respond.io account to test against. Build adapters from the public docs, mark undocumented gaps with `shortcut:` comments, and don't ask the owner for live payloads.
+- A resolved conversation is a closed ticket. A new inbound message reopens it. Assigning a resolved conversation returns 409. Don't change this without owner approval.
 
 ## Read before changing
 
-- App, CLI, source formats, redaction, or classification: read [Full-stack spec](SUPPORT-INSIGHT-FULL-STACK.md).
-- Schema, migrations, persistence, or reporting queries: read [Database spec](SUPPORT-INSIGHT-DATABASE.md).
-- Requirement IDs, source fields, or acceptance thresholds: read [Original brief](KIRO-SPEC-BRIEF-support-insight.md). Use the role specs for the later Ah Va decision.
-- For a change across both roles, read both specs and agree on record shapes, interfaces, and synthetic fixtures first. Keep open design choices pending owner approval.
+- Requirements and acceptance criteria: [requirements.md](.kiro/specs/cx-support-tool/requirements.md).
+- Architecture, schema, API routes, data flows, and correctness properties: [design.md](.kiro/specs/cx-support-tool/design.md).
+- Task history and status: [tasks.md](.kiro/specs/cx-support-tool/tasks.md).
+- Setup, env vars, and offline testing: [README.md](README.md).
+- `SUPPORT-INSIGHT-*.md` and `KIRO-SPEC-BRIEF-support-insight.md` describe an earlier, single-user chat-import design. They are not the current spec. Don't build from them.
+- Keep open design choices pending owner approval.
+
+## Code map
+
+- `app/(app)/`: inbox, thread, reports, and settings pages. `app/(auth)/login`: login page.
+- `app/api/`: route handlers. Only `api/webhooks/*` is public; [proxy.ts](proxy.ts) guards everything else.
+- `lib/adapters/`: one `PlatformAdapter` per platform (`verifyWebhook`, `parseWebhook`, `sendReply`), plus the AI client. Keep platform code here, separate from storage and services.
+- `lib/services/`: webhook intake, conversations, assignment, messages, canned responses, reports, redaction, AI settings.
+- `lib/events/`: in-process SSE bus. It assumes a single server process.
+- `lib/auth/`: JWT session cookie, bcrypt passwords, `currentUser()`. Supervisor-only routes return 403 to agents.
+- `lib/db/`: SQLite through better-sqlite3 and Drizzle. Migrations run only from `npm run seed:users`, not at app startup.
 
 ## Build workflow
 
@@ -23,15 +35,15 @@ Support Insight is a local, single-user tool for the Photobook support lead. It 
 
 ## Data handling
 
-- Keep raw chats, contacts, local databases, and database sidecars off Git. Use synthetic fixtures in tests.
-- Redact names, addresses, emails, phone numbers, and order numbers before model calls. Keep raw text out of logs and exports.
-- Mask transcripts and summaries by default. Reveal originals only after an explicit local action.
-- Bind the app to `127.0.0.1`. Keep API keys in environment variables or macOS Keychain. Never fetch chat attachment URLs.
+- Keep real chats, contacts, local databases, database sidecars, and `.env.local` off Git. Use synthetic fixtures in tests.
+- Redact names, addresses, emails, phone numbers, and order numbers before model calls. Keep raw message text and webhook payloads out of logs.
+- Bind the app to `127.0.0.1`. Keep API keys and secrets in environment variables or macOS Keychain. Never fetch chat attachment URLs.
 
 ## Verify and deliver
 
-1. Check the affected requirement and run focused tests. For shared data changes, verify import, report totals, and drill-down against the same fixture.
-2. Before committing, inspect the staged diff for personal data, credentials, and unrelated files.
+1. Check the affected requirement and correctness property, then run focused tests (`npm test -- <path>`). Tests use an in-memory database.
+2. For changes to ingestion or shared data, verify webhook intake, inbox listing, and report totals against the same fixture.
+3. Before committing, inspect the staged diff for personal data, credentials, and unrelated files.
 
 ## Git branches
 
