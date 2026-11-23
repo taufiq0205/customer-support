@@ -2,11 +2,11 @@
 
 ## Scope
 
-CX Support Tool is a multi-user support inbox for Photobook. It receives Zaapi and respond.io webhooks and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
+CX Support Tool is a multi-user support inbox for Photobook. It receives Zaapi and respond.io webhooks, plus a Telegram bot used as a live test channel, and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
 
 - It runs on the owner's Mac. There is no hosted deployment.
 - It handles live conversations only. It does not import historical chat exports.
-- There is no live Zaapi or respond.io account to test against. Build adapters from the public docs, mark undocumented gaps with `shortcut:` comments, and don't ask the owner for live payloads.
+- There is no live Zaapi or respond.io account to test against. Build adapters from the public docs, mark undocumented gaps with `shortcut:` comments, and don't ask the owner for live payloads. Telegram is the only live channel: use the bot for end-to-end tests (see README).
 - A resolved conversation is a closed ticket. A new inbound message reopens it. Assigning a resolved conversation returns 409. Don't change this without owner approval.
 
 ## Read before changing
@@ -23,6 +23,7 @@ CX Support Tool is a multi-user support inbox for Photobook. It receives Zaapi a
 - `app/(app)/`: inbox, thread, reports, and settings pages. `app/(auth)/login`: login page.
 - `app/api/`: route handlers. Only `api/webhooks/*` is public; [proxy.ts](proxy.ts) guards everything else.
 - `lib/adapters/`: one `PlatformAdapter` per platform (`verifyWebhook`, `parseWebhook`, `sendReply`), plus the AI client. Keep platform code here, separate from storage and services.
+- `scripts/`: `seed-users.ts` (migrations and users) and `telegram-poll.mts` (long-polls the bot and forwards updates to `api/webhooks/telegram`, so the app needs no public URL).
 - `lib/services/`: webhook intake, conversations, assignment, messages, canned responses, reports, redaction, AI settings.
 - `lib/events/`: in-process SSE bus. It assumes a single server process.
 - `lib/auth/`: JWT session cookie, bcrypt passwords, `currentUser()`. Supervisor-only routes return 403 to agents.

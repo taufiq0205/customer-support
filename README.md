@@ -1,8 +1,9 @@
 # CX Support Tool
 
 Multi-user support inbox for Photobook. It receives Zaapi and respond.io
-webhooks, lets agents and supervisors reply, assign, and resolve
-conversations, streams live updates over SSE, and suggests AI replies.
+webhooks and messages from a Telegram test bot. Agents and supervisors reply,
+assign, and resolve conversations. Updates stream live over SSE, and AI can
+suggest replies.
 
 ## Run locally
 
@@ -69,6 +70,9 @@ the inbox.
 The poller uses `getUpdates` long polling, so the app stays on `127.0.0.1` with
 no tunnel. It removes any webhook set on the bot, because Telegram allows only
 one delivery mode. Only private chats are ingested.
+
+If the dev server starts reloading the page in a loop, stop it, close the tab,
+run `rm -rf .next`, then start `npm run dev` again.
 
 ## Data handling
 
