@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { InboxIcon } from 'lucide-react'
+import { ChartColumnIcon, InboxIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +25,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               <InboxIcon data-icon="inline-start" />
               Inbox
             </Button>
+            {session.role === 'supervisor' && (
+              <Button variant="ghost" size="sm" render={<Link href="/reports" />} nativeButton={false}>
+                <ChartColumnIcon data-icon="inline-start" />
+                Reports
+              </Button>
+            )}
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <NotificationBadge />
