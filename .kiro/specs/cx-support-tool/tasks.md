@@ -460,7 +460,7 @@ Build the CX Support Tool as a tracer-bullet sequence: lay the data foundation f
     - Generate valid agent sessions and supervisor-only route strings; assert all responses have HTTP status 403
     - _Requirements: 9.3, 9.4_
 
-- [ ] 25. Final checkpoint — full end-to-end verification
+- [x] 25. Final checkpoint — full end-to-end verification
   - Confirm all property and unit tests pass with `npx vitest --run`
   - Confirm migration applies cleanly, seed script runs, login/logout work, inbox lists conversations, reply send updates thread, AI suggestion inserts draft, assignment notifies agent, reports render correct totals, all 403 guards hold
   - Ensure all tests pass, ask the user if questions arise.
