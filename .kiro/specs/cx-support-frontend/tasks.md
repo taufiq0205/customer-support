@@ -28,7 +28,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
   - **Done when** an agent and a supervisor can sign in to the new shell, open one real synthetic conversation, and sign out. Verify agent role links and forbidden direct access in the same pass.
   - _Requirements: 1.2, 2.3, 6.1_
 
-- [ ] 4. Redesign the queue, thread, and mobile navigation
+- [x] 4. Redesign the queue, thread, and mobile navigation
   - Depends on task 3. Update `app/(app)/inbox/page.tsx`, `inbox-filters.tsx`, `labels.ts`, and `[conversationId]/page.tsx`. Colocate shared queue and thread components under `app/(app)/inbox/` if needed. Reuse server query functions and authorized reads. Keep current URL filters and direct links, and expose `nextCursor` through a next-page link.
   - Use a prominent case identifier, short preview, customer, separate labeled color tag for the actual channel, and compact status or unread treatment. Render a neutral treatment for unknown visual variants. Apply the saved design feedback to the default density. Reserve unsupported order, urgency, and multiple-channel controls for task 9.
   - Show the queue and thread together on desktop and a single pane on mobile. Keep filters when opening or leaving a case. Show distinct empty and no-match states. Keep the latest messages reachable and preserve delivery states, attachment presence, and notification read behavior.
@@ -122,3 +122,11 @@ Chrome passed the agent and supervisor journeys at 1440 × 900 and 390 × 844 ag
 Agents saw only Inbox in primary navigation. Direct requests to `/reports` and `/settings` redirected to Inbox, and the corresponding APIs returned 403. Supervisors opened both destinations from the shell. After logout, the case URL redirected to sign-in.
 
 `npm test` passed 588 tests across 52 files. The TypeScript check and production webpack build passed. Chrome reported a 404 for the favicon, which is absent from the base branch. Live delivery was outside this check.
+
+## Task 4 verification
+
+Chrome passed the queue and thread journeys at 1440 × 900 and 390 × 844 with a temporary SQLite database. The queue applied search and channel filters, advanced the cursor, reset pagination after a filter change, and restored the search field on browser Back. The mobile thread returned to the same filters.
+
+The agent could open an assigned case and had no access to another agent’s case. The supervisor could open both. Opening the assigned case cleared its notification. A signed synthetic respond.io webhook updated the selected queue preview and thread over SSE without a manual reload. The latest message and composer were reachable at both viewport sizes.
+
+The three required test files passed all 35 tests. The full suite passed 591 tests across 52 files. `npx tsc --noEmit --incremental false` passed.
