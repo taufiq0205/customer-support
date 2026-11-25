@@ -22,13 +22,13 @@ describe('requestSuggestion', () => {
 
   it.each([
     [404, { error: 'ai_not_configured' }, 'not configured'],
-    [404, { error: 'not_found' }, 'no longer available'],
-    [401, { error: 'unauthorized' }, 'Sign in again'],
+    [404, { error: 'not_found' }, 'no longer available', 'case'],
+    [401, { error: 'unauthorized' }, 'Sign in again', 'session'],
     [500, { error: 'something_new' }, 'still type a reply'],
     [502, 'not json', 'still type a reply'],
-  ])('maps a %i response to a readable error', async (status, json, text) => {
+  ])('maps a %i response to a readable error', async (status, json, text, access?: string) => {
     respond(status, json)
-    expect(await requestSuggestion('c')).toEqual({ error: expect.stringContaining(text) })
+    expect(await requestSuggestion('c')).toEqual({ error: expect.stringContaining(text), ...(access && { access }) })
   })
 
   it('reports a network failure as an error instead of throwing', async () => {

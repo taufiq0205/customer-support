@@ -58,8 +58,12 @@ export function assign(conversationId: string, agentId: string, actor: Session |
     conversationId,
     payload: { fromAgentId: conv.assignedAgentId, toAgentId: agentId },
   } as const
-  emit(assigned, agentId)
-  if (conv.assignedAgentId) emit(assigned, conv.assignedAgentId)
+  // Every agent could have a draft while the case was unassigned.
+  if (conv.assignedAgentId === null) emit(assigned)
+  else {
+    emit(assigned, agentId)
+    if (conv.assignedAgentId !== agentId) emit(assigned, conv.assignedAgentId)
+  }
   emit({ type: 'notification.created', conversationId, payload: { notificationId } }, agentId)
   return { ok: true, value: next }
 }
