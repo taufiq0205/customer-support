@@ -1,14 +1,12 @@
 import { eq } from 'drizzle-orm'
-import { ChartColumnIcon, InboxIcon, SettingsIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { currentUser } from '@/lib/auth/current-user'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { AppProvider, LogoutButton, NotificationBadge } from './app-provider'
+import { PrimaryNavigation } from './primary-navigation'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await currentUser()
@@ -16,36 +14,28 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <AppProvider session={session}>
-      <div className="flex h-svh flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <span className="font-heading font-semibold">CX Support</span>
-          <Separator orientation="vertical" className="mx-2 h-5" />
-          <nav className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" render={<Link href="/inbox" />} nativeButton={false}>
-              <InboxIcon data-icon="inline-start" />
-              Inbox
-            </Button>
-            {session.role === 'supervisor' && (
-              <>
-                <Button variant="ghost" size="sm" render={<Link href="/reports" />} nativeButton={false}>
-                  <ChartColumnIcon data-icon="inline-start" />
-                  Reports
-                </Button>
-                <Button variant="ghost" size="sm" render={<Link href="/settings" />} nativeButton={false}>
-                  <SettingsIcon data-icon="inline-start" />
-                  Settings
-                </Button>
-              </>
-            )}
-          </nav>
-          <div className="ml-auto flex items-center gap-2">
+      <div className="flex h-svh flex-col bg-background text-foreground">
+        <header className="z-10 flex min-h-16 shrink-0 items-center gap-3 border-b bg-card px-3 sm:px-6">
+          <Link href="/inbox" className="min-w-0 truncate font-heading text-base font-semibold tracking-tight sm:text-lg">
+            Photobook Care
+          </Link>
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-3">
             <NotificationBadge />
-            <span className="text-sm">{user?.displayName ?? session.userId}</span>
-            <Badge variant="secondary">{session.role}</Badge>
+            <div className="flex flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+              <span className="max-w-28 truncate text-xs font-medium sm:max-w-36 sm:text-sm">
+                {user?.displayName ?? session.userId}
+              </span>
+              <Badge variant="secondary" className="capitalize">{session.role}</Badge>
+            </div>
             <LogoutButton />
           </div>
         </header>
-        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <PrimaryNavigation role={session.role} />
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+            {children}
+          </main>
+        </div>
       </div>
     </AppProvider>
   )

@@ -10,20 +10,36 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState(login, { error: '' })
 
   return (
-    <form action={formAction}>
+    <form action={formAction} className="pt-1">
       <FieldGroup>
-        <Field>
+        <Field data-invalid={state.error ? true : undefined}>
           <FieldLabel htmlFor="username">Username</FieldLabel>
-          <Input id="username" name="username" type="text" autoComplete="username" required />
+          <Input
+            id="username"
+            name="username"
+            type="text"
+            autoComplete="username"
+            aria-invalid={state.error ? true : undefined}
+            aria-describedby={state.error ? 'login-error' : undefined}
+            required
+          />
         </Field>
         <Field data-invalid={state.error ? true : undefined}>
           <FieldLabel htmlFor="password">Password</FieldLabel>
-          <Input id="password" name="password" type="password" autoComplete="current-password" required />
-          <p role="alert" aria-live="polite" className="text-sm text-destructive">
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={state.error ? true : undefined}
+            aria-describedby={state.error ? 'login-error' : undefined}
+            required
+          />
+          <p id="login-error" role="alert" aria-live="polite" className="text-sm text-destructive">
             {state.error}
           </p>
         </Field>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="mt-1 w-full">
           Sign in
         </Button>
       </FieldGroup>

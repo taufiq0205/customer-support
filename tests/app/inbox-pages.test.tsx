@@ -8,6 +8,7 @@ vi.mock('next/headers', () => ({
   headers: async () => new Headers(user ? { 'x-auth-user': JSON.stringify(user) } : {}),
 }))
 vi.mock('next/navigation', () => ({
+  usePathname: () => '/inbox',
   redirect: (to: string) => {
     throw new Error(`REDIRECT:${to}`)
   },
@@ -58,12 +59,15 @@ describe('app layout', () => {
     expect(html).toContain('>agent<')
     expect(html).toContain('href="/inbox"')
     expect(html).not.toContain('href="/reports"')
+    expect(html).not.toContain('href="/settings"')
     expect(html).toContain('<p>child</p>')
     expect(html).toContain('aria-label="No unread notifications"')
   })
 
-  it('links supervisors to reports', async () => {
-    expect(renderToStaticMarkup(await AppLayout({ children: null }))).toContain('href="/reports"')
+  it('links supervisors to the Supervisor Desk and Settings', async () => {
+    const html = renderToStaticMarkup(await AppLayout({ children: null }))
+    expect(html).toContain('href="/reports"')
+    expect(html).toContain('href="/settings"')
   })
 
   it('redirects to login without a trusted session header', async () => {

@@ -21,7 +21,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
 
 ## Phase 2 — Connect existing features to the new frontend
 
-- [ ] 3. Build the branded shell and verify one connected case
+- [x] 3. Build the branded shell and verify one connected case
   - Depends on task 2. Read local Next.js docs under `node_modules/next/dist/docs/` and the project shadcn skill before UI changes. Use existing primitives and CSS tokens where possible.
   - Style `app/globals.css`, `app/(auth)/login/page.tsx`, and `app/(auth)/login/login-form.tsx` around the prototype's light Studio design. Update the product title and description in `app/layout.tsx`. Keep login validation and the existing server action.
   - Update `app/(app)/layout.tsx` with responsive navigation, authenticated profile and role, notifications, and logout. Keep `AppProvider` at the authenticated boundary. Link Inbox, Supervisor Desk at `/reports`, and Settings for the appropriate roles. Add AI Agent navigation with its protected route in task 10.
@@ -114,3 +114,11 @@ Ran the root checks on Node.js v22.22.3 with a temporary SQLite database and AI 
 | `npm run build -- --webpack` | Passed compilation, TypeScript, and page generation with network access. The default build script still uses Turbopack. |
 
 This baseline covers discovery, local tests, and production compilation with webpack. Browser journeys and live channel delivery remain for later tasks.
+
+## Task 3 verification
+
+Chrome passed the agent and supervisor journeys at 1440 × 900 and 390 × 844 against the local production build. Both roles signed in, opened the same conversation ingested through a signed synthetic respond.io webhook, reached the reply composer, and signed out. The browser also verified keyboard focus and invalid-password feedback on sign-in.
+
+Agents saw only Inbox in primary navigation. Direct requests to `/reports` and `/settings` redirected to Inbox, and the corresponding APIs returned 403. Supervisors opened both destinations from the shell. After logout, the case URL redirected to sign-in.
+
+`npm test` passed 588 tests across 52 files. The TypeScript check and production webpack build passed. Chrome reported a 404 for the favicon, which is absent from the base branch. Live delivery was outside this check.
