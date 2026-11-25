@@ -25,8 +25,8 @@ const { AppProvider } = await import('@/app/(app)/app-provider')
 
 const inbox = async (query: Record<string, string> = {}) =>
   renderToStaticMarkup(await InboxPage({ searchParams: Promise.resolve(query) }))
-const thread = async (conversationId: string) =>
-  renderToStaticMarkup(<AppProvider session={supervisor}>{await ThreadPage({ params: Promise.resolve({ conversationId }) })}</AppProvider>)
+const thread = async (conversationId: string, query: Record<string, string> = {}) =>
+  renderToStaticMarkup(<AppProvider session={supervisor}>{await ThreadPage({ params: Promise.resolve({ conversationId }), searchParams: Promise.resolve(query) })}</AppProvider>)
 
 let seq = 0
 function insertMessage(conversationId: string, over: Partial<typeof messages.$inferInsert>) {
@@ -105,13 +105,30 @@ describe('inbox page', () => {
     const mine = insertConversation({ assignedAgentId: 'agent-a', customerName: 'Mine' })
     insertConversation({ assignedAgentId: null, customerName: 'Free' })
     const html = await inbox({ assignedTo: 'me' })
-    expect(html).toContain(`href="/inbox/${mine.id}"`)
+    expect(html).toContain(`href="/inbox/${mine.id}?assignedTo=me"`)
     expect(html).not.toContain('Free')
   })
 
   it('ignores an invalid filter value instead of failing', async () => {
     insertConversation({ customerName: 'Still Listed' })
     expect(await inbox({ channel: 'fax' })).toContain('Still Listed')
+  })
+
+  it('keeps the filter on the next page and preserves it through a case link', async () => {
+    for (let index = 0; index < 51; index++) {
+      insertConversation({ customerName: 'Pagination fixture', lastMessageAt: index })
+    }
+    const html = await inbox({ search: 'Pagination fixture' })
+    const href = html.match(/href="(\/inbox\?search=Pagination\+fixture&amp;page=[^"]+)"/)?.[1]
+    expect(href).toBeDefined()
+    const next = new URL(href?.replace('&amp;', '&') ?? '', 'http://localhost').searchParams
+    const later = await inbox(Object.fromEntries(next))
+    expect(later.match(/href="\/inbox\/[^"]+"/g)).toHaveLength(1)
+  })
+
+  it('distinguishes no matches from an empty inbox', async () => {
+    insertConversation({ customerName: 'Other case' })
+    expect(await inbox({ search: 'No such case' })).toContain('No matching conversations')
   })
 
   it('shows an empty state when nothing matches', async () => {
@@ -179,6 +196,14 @@ describe('thread page', () => {
     expect(off).not.toContain('Suggest reply')
     expect(off).toContain('AI suggestions are off. A supervisor can configure them in AI settings.')
     expect(off).toMatch(/<textarea[^>]*aria-label="Reply"/)
+  })
+
+  it('keeps the queue and its return URL on a direct case link', async () => {
+    const conv = insertConversation({ customerName: 'Synthetic filtered case' })
+    const html = await thread(conv.id, { search: 'filtered case', status: 'open' })
+    expect(html).toContain('aria-current="page"')
+    expect(html).toContain('href="/inbox?search=filtered+case&amp;status=open"')
+    expect(html).toContain(conv.id)
   })
 
   it('returns not found for a conversation the agent cannot access', async () => {
