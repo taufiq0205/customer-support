@@ -6,14 +6,14 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
 
 ## Phase 1 — Map and verify the existing application
 
-- [ ] 1. Confirm the feature map before changing the UI
+- [x] 1. Confirm the feature map before changing the UI
   - Record the starting commit and worktree status. Ensure the implementing agent can open the downloaded reference folder. Review the inbox, supervisor desk, and AI Agent screens alongside the product routes and service code.
   - Verify each row in the [feature map](design.md#feature-map). For a feature with an existing backend, record the entry point, permissions, required inputs, and where its UI belongs. For a placeholder, record the missing capability in the [handoff table](design.md#placeholder-handoff). Update those tables only where the checkout differs.
   - Verify the current assignment rule before wiring it. The existing server permits agents to self-assign accessible cases and supervisors to assign active agents. Product behavior follows that contract in this redesign.
   - **Done when** every target screen has a recorded source or gap, and the checked-out files support the map. This is the first task for the implementation agent.
   - _Requirements: 1.1, 6.3_
 
-- [ ] 2. Isolate the reference app and record the product baseline
+- [x] 2. Isolate the reference app and record the product baseline
   - Depends on task 1. Check `tsconfig.json` and `vitest.config.ts`. The root type check currently includes the Vite reference and reports missing reference dependencies and an incompatible import. Root Vitest also discovers its `node:test` suite. Exclude the reference folder from the Next.js type check and scope Vitest discovery to CX Support's `tests/` tree. Preserve the existing X-Ray exclusion and Vitest aliases and options. If Tailwind scans the reference, exclude it in `app/globals.css`.
   - Run `npm test`, `npx tsc --noEmit --incremental false`, and `npm run build` from the root. Follow the [README](../../../README.md) with a temporary `DATABASE_URL`, test-only users and session secret, and a temporary `AI_SETTINGS_ENV_PATH` for settings tests. Keep provider and channel credentials scoped to the test run. Record environment blockers separately from compile or app failures. Baseline before isolation was 588 passing tests across 52 CX Support files with `npm test -- tests/`.
   - **Done when** product checks no longer discover reference sources or tests and the baseline results are recorded.
@@ -85,3 +85,32 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
   - Update the [placeholder handoff](design.md#placeholder-handoff) with the final frontend entry points and remaining backend inputs and decisions. Confirm fresh UI paths use existing auth/data contracts and no placeholder logic has entered a backend runtime path.
   - **Done when** the connected flow evidence, placeholder review, and checks are recorded here and every completed task is checked off with evidence.
   - _Requirements: 1.3, 6.1, 6.2, 6.3_
+
+## Task 1 verification
+
+Started at `b8411ec` on `main` with an existing unstaged `.gitignore` edit. Fetched `origin` and switched to `docs/cx-frontend-feature-map` from `origin/main`, which pointed to the same commit. The existing edit stayed in the worktree.
+
+Opened the local reference sources under `photobook-care-studio/src/components/`. `AgentWorkspace.tsx` maps to the shell, inbox, thread, composer, and Case Context. `SupervisorDesk.tsx` maps to team reports and the planned Escalations view. `AiAgentWorkspace.tsx` maps to the planned AI Agent views. The product’s current provider, canned responses, and auto-assignment map to Settings.
+
+| Area | Verification path |
+| --- | --- |
+| Login, shell, events, and notifications | Read the login action, authenticated layout, AppProvider, logout handler, and event and notification routes. See `tests/auth/`, `tests/events/bus.test.ts`, and `tests/api/notifications-route.test.ts`. |
+| Inbox, composer, and case controls | Read the pages, compose helpers, conversation and assignment services, and conversation routes. See `tests/app/inbox-pages.test.tsx`, `tests/api/conversations-routes.test.ts`, `tests/api/messages-route.test.ts`, `tests/api/ai-suggest-route.test.ts`, `tests/api/assign-route.test.ts`, and `tests/services/property-13-reopen-on-message.test.ts`. |
+| Reports and Settings | Read the supervisor pages and routes, provider settings action, canned-response handlers, and assignment service and webhook caller. See `tests/api/reports-route.test.ts`, `tests/services/property-15-report-totals.test.ts`, `tests/api/ai-settings-route.test.ts`, `tests/api/canned-responses-route.test.ts`, and `tests/services/property-08-round-robin.test.ts`. |
+| Placeholders | Compared the reference controls with the product pages, API routes, services, and `lib/db/schema.ts`. The [handoff table](design.md#placeholder-handoff) records each planned location and missing capability. Message attachments are stored as a presence flag. AI suggestions produce drafts and request logs. Autonomous delivery, knowledge, sentiment, and drift data have no product source. |
+
+`npm test -- tests/` passed 588 tests across 52 files with temporary database and AI settings paths. The evidence covers source inspection and local tests. Browser rendering and live delivery were outside this check.
+
+## Task 2 verification
+
+Ran the root checks on Node.js v22.22.3 with a temporary SQLite database and AI settings file, synthetic agent and supervisor users, a test session secret, and test provider and channel values.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | Passed all 588 tests across 52 files. `npx vitest list --filesOnly` returned the same product file set as `npx vitest list tests/ --filesOnly`. |
+| `npx tsc --noEmit --incremental false` | Passed. Adding `--listFilesOnly` confirmed that the root program includes the app and excludes `photobook-care-studio/` and `photobook-xray-main/`. |
+| Tailwind | Compiled `app/globals.css` through PostCSS. The Git-ignored reference contributed neither a source dependency nor its `w-[296px]` utility. |
+| `npm run build` | The restricted run could not fetch Geist from Google Fonts. The network-enabled retry cleared the font error, then Turbopack could not bind its CSS worker port. |
+| `npm run build -- --webpack` | Passed compilation, TypeScript, and page generation with network access. The default build script still uses Turbopack. |
+
+This baseline covers discovery, local tests, and production compilation with webpack. Browser journeys and live channel delivery remain for later tasks.
