@@ -112,7 +112,7 @@ export default async function ThreadPage({
                             {m.sentAt !== null && <time dateTime={new Date(m.sentAt).toISOString()}>{formatTime(m.sentAt)}</time>}
                             {outbound && <Badge variant={delivery.variant}>{delivery.label}</Badge>}
                             {outbound && m.body && latestByBody.get(m.body) === m.id && (m.status === 'failed' || m.status === 'unconfirmed') && (
-                              <RetryButton conversationId={c.id} body={m.body} unconfirmed={m.status === 'unconfirmed'} />
+                              <RetryButton conversationId={c.id} messageId={m.id} body={m.body} unconfirmed={m.status === 'unconfirmed'} />
                             )}
                           </MessageFooter>
                         </MessageContent>
@@ -126,7 +126,7 @@ export default async function ThreadPage({
           </MessageScroller>
         </MessageScrollerProvider>
         <div className="shrink-0 border-t bg-card p-3 sm:px-5">
-          <ComposeArea conversationId={c.id} aiEnabled={readAIConfig() !== null} customerName={c.customerName} />
+          <ComposeArea conversationId={c.id} aiEnabled={readAIConfig() !== null} customerName={c.customerName} channel={channel} />
         </div>
       </section>
     </div>

@@ -3,10 +3,19 @@
 import { BellIcon, LogOutIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { ReplyDrafts } from '@/components/compose/drafts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Session } from '@/lib/auth/session'
 import type { SSEEvent } from '@/lib/events/types'
+
+const DraftsContext = createContext<ReplyDrafts | null>(null)
+
+export function useReplyDrafts() {
+  const drafts = useContext(DraftsContext)
+  if (!drafts) throw new Error('useReplyDrafts must be used inside AppProvider')
+  return drafts
+}
 
 const SessionContext = createContext<Session | null>(null)
 
@@ -35,6 +44,7 @@ const refreshes = (type: SSEEvent['type']) => type.startsWith('conversation.') |
 // so the inbox and thread pages stay current without their own subscriptions.
 export function AppProvider({ session, children }: { session: Session; children: ReactNode }) {
   const router = useRouter()
+  const [drafts] = useState(() => new ReplyDrafts())
   const [unread, setUnread] = useState<Notification[]>([])
   // A GET already in flight when markRead runs would bring these back.
   const readIds = useRef(new Set<string>())
@@ -64,7 +74,10 @@ export function AppProvider({ session, children }: { session: Session; children:
     }
     source.onmessage = (e) => {
       try {
-        const { type } = JSON.parse(e.data) as SSEEvent
+        const { type, conversationId, payload } = JSON.parse(e.data) as SSEEvent
+        if (type === 'conversation.assigned' && session.role === 'agent' && payload.toAgentId !== session.userId) {
+          drafts.discard(conversationId)
+        }
         if (refreshes(type)) refresh()
         if (type === 'notification.created') loadNotifications()
       } catch {}
@@ -76,18 +89,23 @@ export function AppProvider({ session, children }: { session: Session; children:
     // Notifications load on every open, the first included, so none land between the fetch and the stream.
     source.onopen = () => {
       loadNotifications()
-      if (dropped) refresh()
+      if (dropped) {
+        void drafts.recheckAccess()
+        refresh()
+      }
       dropped = false
     }
     return () => {
       clearTimeout(timer)
       source.close()
     }
-  }, [router, loadNotifications])
+  }, [router, loadNotifications, drafts, session.role, session.userId])
 
   return (
     <SessionContext value={session}>
-      <NotificationsContext value={{ unread, markRead }}>{children}</NotificationsContext>
+      <NotificationsContext value={{ unread, markRead }}>
+        <DraftsContext value={drafts}>{children}</DraftsContext>
+      </NotificationsContext>
     </SessionContext>
   )
 }
@@ -122,9 +140,11 @@ export function ClearConversationNotifications({ conversationId }: { conversatio
 }
 
 export function LogoutButton() {
+  const drafts = useReplyDrafts()
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     // A full load drops the client router cache of protected pages.
+    drafts.clear()
     window.location.assign('/login')
   }
   return (

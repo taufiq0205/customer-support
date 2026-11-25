@@ -1,7 +1,10 @@
 'use client'
 
 import { CircleAlertIcon, SendIcon, SparklesIcon } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useId, useState, useSyncExternalStore } from 'react'
+import { useReplyDrafts } from '@/app/(app)/app-provider'
+import { Badge } from '@/components/ui/badge'
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGroupTextarea } from '@/components/ui/input-group'
@@ -9,22 +12,23 @@ import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from '@/comp
 import { Spinner } from '@/components/ui/spinner'
 import type { CannedResponse } from '@/lib/services/canned-response'
 import { fetchCannedResponses, shortcodeQuery, substitutePlaceholder } from './canned-responses'
-import { useSendReply } from './send-reply'
-import { requestSuggestion } from './suggest-reply'
 
 export function ComposeArea({
   conversationId,
   aiEnabled,
   customerName,
+  channel,
 }: {
   conversationId: string
   aiEnabled: boolean
   customerName: string | null
+  channel: { label: string; className: string }
 }) {
-  const [text, setText] = useState('')
-  const { state, send, reset } = useSendReply(conversationId)
-  const [suggesting, setSuggesting] = useState(false)
-  const [suggestError, setSuggestError] = useState<string | null>(null)
+  const router = useRouter()
+  const drafts = useReplyDrafts()
+  const readDraft = () => drafts.get(conversationId)
+  const { text, send: state, suggestion } = useSyncExternalStore(drafts.subscribe, readDraft, readDraft)
+  const suggesting = suggestion.kind === 'pending'
   const sending = state.kind === 'sending'
   const empty = text.trim() === ''
 
@@ -47,29 +51,20 @@ export function ComposeArea({
   }, [query])
 
   const edit = (next: string) => {
-    setText(next)
+    drafts.edit(conversationId, next)
     setActive(0)
     setDismissed(false)
-    if (state.kind === 'error') reset()
-    setSuggestError(null)
   }
 
   // A customer without a name keeps the token visible, so the agent fills it in instead of sending "Hi ,".
   const insert = (r: CannedResponse) => edit(customerName === null ? r.body : substitutePlaceholder(r.body, customerName))
 
   const submit = async (confirmResend = false) => {
-    if (sending || empty) return
-    if (await send(text, confirmResend)) setText('')
+    if (await drafts.send(conversationId, confirmResend)) router.refresh()
   }
 
   const suggest = async () => {
-    setSuggesting(true)
-    setSuggestError(null)
-    const result = await requestSuggestion(conversationId)
-    setSuggesting(false)
-    if ('error' in result) return setSuggestError(result.error)
-    // Never discard what the agent typed, including while the request was in flight.
-    setText((current) => (current.trim() === '' ? result.suggestion : `${current}\n\n${result.suggestion}`))
+    if (await drafts.suggest(conversationId)) router.refresh()
   }
 
   return (
@@ -85,18 +80,20 @@ export function ComposeArea({
           <CircleAlertIcon />
           <AlertTitle>Reply not sent</AlertTitle>
           <AlertDescription>{state.message}</AlertDescription>
-          <AlertAction>
-            <Button type="button" size="xs" variant="outline" onClick={() => void submit(state.duplicate)}>
-              {state.duplicate ? 'Send anyway' : 'Retry'}
-            </Button>
-          </AlertAction>
+          {state.submitted === text && (
+            <AlertAction>
+              <Button type="button" size="sm" variant="outline" onClick={() => void submit(state.duplicate)}>
+                {state.duplicate ? 'Send anyway' : 'Retry'}
+              </Button>
+            </AlertAction>
+          )}
         </Alert>
       )}
-      {suggestError && (
+      {suggestion.kind === 'error' && (
         <Alert variant="destructive">
           <CircleAlertIcon />
           <AlertTitle>No suggestion</AlertTitle>
-          <AlertDescription>{suggestError}</AlertDescription>
+          <AlertDescription>{suggestion.message}</AlertDescription>
         </Alert>
       )}
       {open && (
@@ -129,8 +126,8 @@ export function ComposeArea({
           aria-autocomplete="list"
           aria-controls={open ? listId : undefined}
           aria-activedescendant={open ? `${listId}-${active}` : undefined}
+          className="max-h-28 sm:max-h-40"
           value={text}
-          readOnly={sending}
           onChange={(e) => edit(e.target.value)}
           onKeyDown={(e) => {
             if (open && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -154,8 +151,8 @@ export function ComposeArea({
             }
           }}
         />
-        <InputGroupAddon align="block-end">
-          <InputGroupText className="mr-auto">Ctrl or ⌘ + Enter to send</InputGroupText>
+        <InputGroupAddon align="block-end" className="flex-wrap">
+          <InputGroupText className="mr-auto hidden xl:inline-flex">Ctrl or ⌘ + Enter to send</InputGroupText>
           {aiEnabled && (
             <InputGroupButton
               type="button"
@@ -168,10 +165,13 @@ export function ComposeArea({
               Suggest reply
             </InputGroupButton>
           )}
-          <InputGroupButton type="submit" variant="default" size="sm" disabled={sending || empty}>
-            {sending ? <Spinner data-icon="inline-start" /> : <SendIcon data-icon="inline-start" />}
-            {sending ? 'Sending' : 'Send'}
-          </InputGroupButton>
+          <div className="ml-auto flex items-center gap-2">
+            <Badge variant="secondary" className={channel.className}>Via {channel.label}</Badge>
+            <InputGroupButton type="submit" variant="default" size="sm" disabled={sending || empty}>
+              {sending ? <Spinner data-icon="inline-start" /> : <SendIcon data-icon="inline-start" />}
+              {sending ? 'Sending' : 'Send'}
+            </InputGroupButton>
+          </div>
         </InputGroupAddon>
       </InputGroup>
       {!aiEnabled && (

@@ -1,9 +1,7 @@
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+export type AccessLoss = 'session' | 'case'
+export type SendError = { message: string; duplicate: boolean; access?: AccessLoss }
 
-export type SendError = { message: string; duplicate: boolean }
-
-export type SendState = { kind: 'idle' } | { kind: 'sending' } | ({ kind: 'error' } & SendError)
+export type SendState = { kind: 'idle' } | { kind: 'sending' } | ({ kind: 'error'; submitted: string } & SendError)
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_body: 'Type a reply before sending.',
@@ -31,19 +29,7 @@ export async function sendReply(conversationId: string, body: string, confirmRes
   return {
     message: (typeof code === 'string' && ERROR_MESSAGES[code]) || FALLBACK,
     duplicate: code === 'unconfirmed_duplicate',
+    ...(res.status === 401 && { access: 'session' }),
+    ...((res.status === 403 || code === 'not_found') && { access: 'case' }),
   }
-}
-
-// Send state shared by the compose area and per-message retry; a server refresh shows the stored reply.
-export function useSendReply(conversationId: string) {
-  const router = useRouter()
-  const [state, setState] = useState<SendState>({ kind: 'idle' })
-  const send = async (body: string, confirmResend = false) => {
-    setState({ kind: 'sending' })
-    const error = await sendReply(conversationId, body, confirmResend)
-    setState(error ? { kind: 'error', ...error } : { kind: 'idle' })
-    if (!error) router.refresh()
-    return !error
-  }
-  return { state, send, reset: () => setState({ kind: 'idle' }) }
 }

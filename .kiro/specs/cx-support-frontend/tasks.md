@@ -35,7 +35,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
   - **Done when** a browser check opens authorized deep links, filters and pages the queue, returns to the same filters on mobile, and observes synthetic SSE updates in the queue and thread. Run `npm test -- tests/app/inbox-pages.test.tsx tests/api/conversations-routes.test.ts tests/events/bus.test.ts`.
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 6.1_
 
-- [ ] 5. Restyle the composer and protect drafts across case switches
+- [x] 5. Restyle the composer and protect drafts across case switches
   - Depends on task 4. Update `components/compose/ComposeArea.tsx` and `RetryButton.tsx` as needed. Reuse send, suggestion, and canned-response helpers. Put the actual reply channel next to Send. Keep manual reply available and keep duplicate confirmation before retrying an unconfirmed send.
   - Scope in-memory drafts and in-flight work to the authenticated user and conversation. Reuse the authenticated provider or inbox layout for state shared across inbox navigation. Clear drafts on logout and when access is lost. Keep edits through SSE refresh, return to a case, and failed sends. Bind each request and completion to its originating case and preserve text typed after submission.
   - Add a targeted regression for delayed suggestions during a case switch. In the browser, also verify draft restoration, edits during SSE refresh, send failure, manual fallback, and canned autocomplete with a customer whose name is missing.

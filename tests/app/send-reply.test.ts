@@ -30,13 +30,13 @@ describe('sendReply', () => {
 
   it.each([
     [400, { error: 'invalid_body' }, 'Type a reply'],
-    [404, { error: 'not_found' }, 'no longer available'],
-    [401, { error: 'unauthorized' }, 'Sign in again'],
+    [404, { error: 'not_found' }, 'no longer available', 'case'],
+    [401, { error: 'unauthorized' }, 'Sign in again', 'session'],
     [500, { error: 'something_new' }, 'could not be sent'],
     [502, 'not json', 'could not be sent'],
-  ])('maps a %i response to a readable error', async (status, json, text) => {
+  ])('maps a %i response to a readable error', async (status, json, text, access?: string) => {
     respond(status, json)
-    expect(await sendReply('c', 'hello')).toEqual({ message: expect.stringContaining(text), duplicate: false })
+    expect(await sendReply('c', 'hello')).toEqual({ message: expect.stringContaining(text), duplicate: false, ...(access && { access }) })
   })
 
   it('reports a network failure as an error instead of throwing', async () => {

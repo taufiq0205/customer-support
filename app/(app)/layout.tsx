@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = db.select({ displayName: users.displayName }).from(users).where(eq(users.id, session.userId)).get()
 
   return (
-    <AppProvider session={session}>
+    <AppProvider key={session.userId} session={session}>
       <div className="flex h-svh flex-col bg-background text-foreground">
         <header className="z-10 flex min-h-16 shrink-0 items-center gap-3 border-b bg-card px-3 sm:px-6">
           <Link href="/inbox" className="min-w-0 truncate font-heading text-base font-semibold tracking-tight sm:text-lg">
