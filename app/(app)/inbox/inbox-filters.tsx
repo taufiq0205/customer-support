@@ -23,7 +23,7 @@ const FILTERS: { param: string; label: string; items: Option[] }[] = [
     param: 'status',
     label: 'Status',
     items: [
-      { label: 'Any status', value: null },
+      { label: 'All', value: '' },
       ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ label, value })),
     ],
   },
@@ -57,7 +57,7 @@ export function InboxFilters({ values }: { values: Record<string, string | strin
 
   const update = (param: string, value: string | null) => {
     const params = new URLSearchParams(window.location.search)
-    if (value) params.set(param, value)
+    if (value !== null && (value || param === 'status')) params.set(param, value)
     else params.delete(param)
     params.delete('page')
     router.replace(inboxHref(params))
@@ -82,12 +82,12 @@ export function InboxFilters({ values }: { values: Record<string, string | strin
         }}
       />
       {FILTERS.map(({ param, label, items }) => {
-        const value = firstValue(values[param])
+        const value = firstValue(values[param]) ?? (param === 'status' ? 'open' : undefined)
         return (
           <Select
             key={param}
             items={items}
-            value={items.some((i) => i.value === value) ? value ?? null : null}
+            value={items.some((i) => i.value === value) ? value ?? null : param === 'status' ? '' : null}
             onValueChange={(value) => update(param, value)}
           >
             <SelectTrigger aria-label={label} className="w-full min-w-0">

@@ -42,7 +42,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
   - **Done when** a synthetic reply reaches the correct thread, no late request writes into another customer's composer, and Send and retry are reachable at 390 × 844. Run `npm test -- tests/app/send-reply.test.ts tests/app/suggest-reply.test.ts tests/app/canned-responses.test.ts tests/api/messages-route.test.ts tests/api/ai-suggest-route.test.ts`.
   - _Requirements: 2.3, 3.1, 3.2, 3.3, 6.1_
 
-- [ ] 6. Wire case ownership and lifecycle controls
+- [x] 6. Wire case ownership and lifecycle controls
   - Depends on task 5. Add controls beside the thread header and surface the real owner in the queue or header. Wire Claim and Assign to `POST /api/conversations/[id]/assign` with `agentId`. Read minimal active-agent options on the server for supervisors. Show friendly errors for unavailable agents, access loss, and resolved conflicts.
   - Wire Snooze, Resolve, and Reopen to `PATCH /api/conversations/[id]/status`. Use `toStatus`, optional `reason`, and epoch-millisecond `snoozedUntil` for a future local date and time. Offer only current permitted transitions. Use the Open status filter for the active queue and keep All, Snoozed, and Resolved available through the existing query contract.
   - **Done when** an agent claims an accessible case, a supervisor reassigns it, and the new owner receives a notification. Verify that snoozing and resolving remove cases from the active queue, assigning a resolved case still conflicts, and a synthetic inbound message reopens it. Run `npm test -- tests/api/assign-route.test.ts tests/api/conversations-routes.test.ts tests/api/notifications-route.test.ts tests/services/property-13-reopen-on-message.test.ts`.
@@ -130,3 +130,13 @@ Chrome passed the queue and thread journeys at 1440 × 900 and 390 × 844 with a
 The agent could open an assigned case and had no access to another agent’s case. The supervisor could open both. Opening the assigned case cleared its notification. A signed synthetic respond.io webhook updated the selected queue preview and thread over SSE without a manual reload. The latest message and composer were reachable at both viewport sizes.
 
 The three required test files passed all 35 tests. The full suite passed 591 tests across 52 files. `npx tsc --noEmit --incremental false` passed.
+
+## Task 6 verification
+
+Chrome verified Claim and Reassign with two agents and a supervisor on a temporary SQLite database. The new owner received an in-app notification. Selecting an agent who became inactive returned a friendly error.
+
+At 390 × 844, Snooze saved the selected local time as epoch milliseconds and recorded the optional reason. Snoozed and resolved cases left the default Open queue at 1440 × 900. All, Snoozed, and Resolved could still find the matching case. Assigning a resolved case returned 409.
+
+Reopen and a signed synthetic respond.io webhook each returned the case to Open. The thread and queue updated over SSE, and the report summary matched the same case throughout.
+
+The four required suites passed 29 tests. The full suite passed 598 tests across 53 files, and `npx tsc --noEmit --incremental false` passed. Browser checks used the local development server and synthetic data.

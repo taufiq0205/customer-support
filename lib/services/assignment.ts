@@ -16,6 +16,11 @@ const isActiveAgent = and(eq(users.role, 'agent'), eq(users.isActive, 1))
 const activeAgent = (id: string) =>
   db.select({ id: users.id }).from(users).where(and(eq(users.id, id), isActiveAgent)).get()
 
+export function listActiveAgents() {
+  return db.select({ id: users.id, displayName: users.displayName })
+    .from(users).where(isActiveAgent).orderBy(users.displayName, users.id).all()
+}
+
 // `actor` null means the system (auto-assign).
 export function assign(conversationId: string, agentId: string, actor: Session | null): AssignResult {
   const conv =

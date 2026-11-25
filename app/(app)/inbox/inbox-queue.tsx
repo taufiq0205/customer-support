@@ -29,13 +29,15 @@ export function InboxQueue({
   selectedId?: string
 }) {
   const query = inboxQuery(searchParams)
-  const { filters } = parseConversationQuery(query, session)
+  const filterQuery = new URLSearchParams(query)
+  if (!filterQuery.has('status')) filterQuery.set('status', 'open')
+  const { filters } = parseConversationQuery(filterQuery, session)
   const { items, nextCursor } = getConversations(filters, session)
   const nextPageQuery = new URLSearchParams(query)
   if (nextCursor) nextPageQuery.set('page', nextCursor)
   const filtered = Boolean(
     filters.search ||
-    filters.status ||
+    (query.has('status') && filters.status) ||
     filters.platform ||
     filters.channel ||
     filters.assignedAgentId !== undefined
