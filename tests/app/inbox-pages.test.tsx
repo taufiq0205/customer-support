@@ -77,6 +77,19 @@ describe('app layout', () => {
 })
 
 describe('inbox page', () => {
+  it('shows Open by default and accepts an explicit All or lifecycle filter', async () => {
+    insertConversation({ customerName: 'Open fixture' })
+    insertConversation({ customerName: 'Snoozed fixture', status: 'snoozed', snoozedUntil: Date.now() + 60_000 })
+    insertConversation({ customerName: 'Resolved fixture', status: 'resolved' })
+    const active = await inbox()
+    expect(active).toContain('Open fixture')
+    expect(active).not.toMatch(/Snoozed fixture|Resolved fixture/)
+    const all = await inbox({ status: '' })
+    for (const label of ['Open fixture', 'Snoozed fixture', 'Resolved fixture']) expect(all).toContain(label)
+    expect(await inbox({ status: 'snoozed' })).toContain('Snoozed fixture')
+    expect(await inbox({ status: 'resolved' })).toContain('Resolved fixture')
+  })
+
   it('lists each conversation with name, platform, channel, preview, time and unread count', async () => {
     const read = insertConversation({ customerName: 'Synthetic Alice', platform: 'zaapi', channel: 'line', unreadCount: 0 })
     const unread = insertConversation({
@@ -137,6 +150,22 @@ describe('inbox page', () => {
 })
 
 describe('thread page', () => {
+  it('shows the real owner and only offers actions allowed for the viewer and status', async () => {
+    const unassigned = insertConversation()
+    user = agent('agent-a')
+    const claimable = await thread(unassigned.id)
+    expect(claimable).toContain('Owner: Unassigned')
+    expect(claimable).toContain('>Claim<')
+    expect(claimable).not.toContain('>Assign<')
+
+    const resolved = insertConversation({ assignedAgentId: 'agent-a', status: 'resolved' })
+    user = supervisor
+    const closed = await thread(resolved.id)
+    expect(closed).toContain('Owner: agent-a')
+    expect(closed).toContain('>Reopen<')
+    expect(closed).not.toMatch(/>(Assign|Claim|Snooze|Resolve)</)
+  })
+
   it('renders messages in chronological order with delivery status on outbound ones', async () => {
     const conv = insertConversation({ customerName: 'Synthetic Bob', channel: 'instagram' })
     insertMessage(conv.id, { body: 'third reply', direction: 'outbound', status: 'failed', sentAt: 3_000 })

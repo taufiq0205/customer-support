@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { ArrowLeftIcon, PaperclipIcon } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -17,8 +18,12 @@ import {
 } from '@/components/ui/message-scroller'
 import { readAIConfig } from '@/lib/adapters/ai'
 import { currentUser } from '@/lib/auth/current-user'
-import { getConversation, type Message as ThreadMessage } from '@/lib/services/conversation'
+import { db } from '@/lib/db'
+import { users } from '@/lib/db/schema'
+import { listActiveAgents } from '@/lib/services/assignment'
+import { getConversation, TRANSITIONS, type Message as ThreadMessage } from '@/lib/services/conversation'
 import { ClearConversationNotifications } from '../../app-provider'
+import { CaseControls } from '../case-controls'
 import { InboxQueue, type InboxSearchParams } from '../inbox-queue'
 import { caseLabel, channelPresentation, DELIVERY_LABELS, formatTime, inboxHref, inboxQuery, platformLabel, statusLabel } from '../labels'
 
@@ -43,6 +48,14 @@ export default async function ThreadPage({
   const { conversation: c, messages } = result.value
   const filters = await searchParams
   const channel = channelPresentation(c.channel)
+  const owner = c.assignedAgentId === null ? 'Unassigned' : (
+    db.select({ name: users.displayName }).from(users).where(eq(users.id, c.assignedAgentId)).get()?.name
+    ?? 'Unknown agent'
+  )
+  const assignment = c.status === 'resolved' ? null
+    : session.role === 'supervisor'
+      ? { kind: 'assign' as const, currentAgentId: c.assignedAgentId, agents: listActiveAgents() }
+      : c.assignedAgentId === null ? { kind: 'claim' as const, agentId: session.userId } : null
   // Only the newest outbound copy of a body offers retry, so an old Resend cannot send a third copy.
   const latestByBody = new Map(messages.filter((m) => m.direction === 'outbound').map((m) => [m.body, m.id]))
 
@@ -61,14 +74,16 @@ export default async function ThreadPage({
           >
             <ArrowLeftIcon />
           </Link>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 xl:min-w-32">
             <p className="font-mono text-xs font-semibold text-muted-foreground" title={c.id}>{caseLabel(c.id)}</p>
             <h1 id="thread-heading" className="break-words font-heading text-lg font-semibold">
               {c.customerName ?? c.customerIdentifier ?? 'Unknown customer'}
             </h1>
+            <p className="break-words text-xs text-muted-foreground">Owner: {owner}</p>
           </div>
           <Badge variant="secondary" className={channel.className}>{channel.label}</Badge>
           <Badge variant="outline">{statusLabel(c.status)}</Badge>
+          <CaseControls conversationId={c.id} assignment={assignment} transitions={TRANSITIONS[c.status] ?? []} />
         </header>
         <details className="shrink-0 border-b bg-card px-3 text-sm sm:px-5">
           <summary className="w-fit cursor-pointer py-2 font-medium focus-visible:outline-2">Case context</summary>
