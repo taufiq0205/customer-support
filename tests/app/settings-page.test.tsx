@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Session } from '@/lib/auth/session'
-import { agent, supervisor } from '../api/helpers'
+import { agent, db, setupDb, supervisor } from '../api/helpers'
 
 let user: Session = supervisor
 vi.mock('next/headers', () => ({
@@ -17,12 +17,17 @@ vi.mock('next/navigation', () => ({
 }))
 
 const { default: SettingsPage } = await import('@/app/(app)/settings/page')
-const { saveAISettingsAction } = await import('@/app/(app)/settings/actions')
+const { saveAISettingsAction, saveAutoAssignAction } = await import('@/app/(app)/settings/actions')
+const { assignmentRules } = await import('@/lib/db/schema')
+const { currentAutoAssignRule } = await import('@/lib/services/assignment')
 const { readAIConfig } = await import('@/lib/adapters/ai')
+
+beforeAll(setupDb)
 
 let envPath: string
 beforeEach(() => {
   user = supervisor
+  db.delete(assignmentRules).run()
   envPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'settings-page-')), '.env.local')
   vi.stubEnv('AI_SETTINGS_ENV_PATH', envPath)
   vi.stubEnv('AI_ENDPOINT_URL', 'http://localhost:11434')
@@ -71,5 +76,26 @@ describe('saveAISettingsAction', () => {
     const state = await saveAISettingsAction(initial, form({ endpointUrl: 'https://ai.example.test', modelName: 'new-model', apiKey: '' }))
     expect(state).toEqual({ endpointUrl: 'https://ai.example.test', modelName: 'new-model', apiKeySet: true, saved: true })
     expect(readAIConfig()).toEqual({ endpointUrl: 'https://ai.example.test', modelName: 'new-model', apiKey: 'synthetic-secret-key' })
+  })
+})
+
+describe('saveAutoAssignAction', () => {
+  it('rejects agents before changing the current rule', async () => {
+    user = agent('agent-a')
+    await expect(saveAutoAssignAction({ rule: undefined }, form({ strategy: 'round_robin' }))).rejects.toThrow('REDIRECT:/inbox')
+    expect(currentAutoAssignRule()).toBeUndefined()
+  })
+
+  it('persists valid routing and preserves it when an invalid rule is submitted', async () => {
+    const saved = await saveAutoAssignAction({ rule: undefined }, form({ strategy: 'manual', agentId: 'agent-a' }))
+    expect(saved).toEqual({ rule: { strategy: 'manual', manualAgentId: 'agent-a' } })
+    await expect(saveAutoAssignAction(saved, form({ strategy: 'manual', agentId: 'sup' })))
+      .resolves.toEqual({ ...saved, error: 'Choose an active agent.' })
+    await expect(saveAutoAssignAction(saved, form({ strategy: 'invalid' })))
+      .resolves.toMatchObject({ rule: saved.rule, error: expect.stringMatching(/Choose a routing rule/) })
+    expect(renderToStaticMarkup(await SettingsPage())).toContain('Current rule: agent-a')
+    await expect(saveAutoAssignAction(saved, form({ strategy: 'round_robin' })))
+      .resolves.toEqual({ rule: { strategy: 'round_robin', manualAgentId: null } })
+    expect(currentAutoAssignRule()).toEqual({ strategy: 'round_robin', manualAgentId: null })
   })
 })

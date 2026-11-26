@@ -53,7 +53,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
   - **Done when** the supervisor can change date, agent, platform, and channel filters, the summary updates through existing refresh behavior, and the same synthetic records reconcile with the inbox. Run `npm test -- tests/app/reports-page.test.tsx tests/api/reports-route.test.ts tests/services/property-15-report-totals.test.ts`.
   - _Requirements: 4.1, 6.2_
 
-- [ ] 8. Connect supervisor settings to current operations
+- [x] 8. Connect supervisor settings to current operations
   - Depends on task 3. Update `app/(app)/settings/page.tsx` and `ai-settings-form.tsx` to match the shell. Keep the existing provider action in `actions.ts`. Preserve server-side provider validation and write-only key handling. Label the form Reply Suggestion Provider.
   - Add a canned-response section under `app/(app)/settings/`. Use the existing list and CRUD endpoints. Display name, shortcode, and body. Handle duplicate shortcodes and confirm deletion. Verify the saved response can be found and inserted from the actual composer.
   - Add an auto-assignment section under `app/(app)/settings/` with the current rule and active-agent options when required. Add a supervisor-guarded form action that validates the choice and calls `configureAutoAssign`. Keep the existing `autoAssign` execution in the webhook service.
@@ -140,3 +140,11 @@ At 390 × 844, Snooze saved the selected local time as epoch milliseconds and re
 Reopen and a signed synthetic respond.io webhook each returned the case to Open. The thread and queue updated over SSE, and the report summary matched the same case throughout.
 
 The four required suites passed 29 tests. The full suite passed 598 tests across 53 files, and `npx tsc --noEmit --incremental false` passed. Browser checks used the local development server and synthetic data.
+
+## Task 8 verification
+
+Chrome verified supervisor settings at 1440 × 900 and 390 × 844 on the local webpack build. Provider values, the fixed assignment rule, and an edited canned response persisted through reload. The API key field stayed empty after reload. Duplicate shortcodes returned a friendly error. Canceling deletion kept the response, and confirming deletion removed it through reload.
+
+A signed synthetic Telegram webhook assigned a new conversation to the configured agent. The agent inserted the edited canned response in the mobile composer with the customer name substituted. Direct agent access to Settings redirected to Inbox. An agent write to the canned response endpoint returned 403. The settings action test also verified that agents cannot change routing.
+
+The four focused suites passed 28 tests. The full suite passed 604 tests. TypeScript and the production webpack build passed. Browser verification used an isolated database and provider settings file. Live Telegram delivery and live AI provider calls were outside this check.

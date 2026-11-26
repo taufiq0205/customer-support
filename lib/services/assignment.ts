@@ -91,9 +91,16 @@ export function configureAutoAssign(
   return { ok: true, value }
 }
 
+export function currentAutoAssignRule() {
+  return db.select({
+    strategy: assignmentRules.strategy,
+    manualAgentId: assignmentRules.manualAgentId,
+  }).from(assignmentRules).where(eq(assignmentRules.isActive, 1)).get()
+}
+
 // Returns null when no rule applies.
 export function autoAssign(conversationId: string): AssignResult | null {
-  const rule = db.select().from(assignmentRules).where(eq(assignmentRules.isActive, 1)).get()
+  const rule = currentAutoAssignRule()
   if (!rule) return null
   if (rule.strategy === 'manual') return assign(conversationId, rule.manualAgentId!, null)
 

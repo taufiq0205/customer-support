@@ -67,7 +67,7 @@ export function AISettingsForm({ initial }: { initial: AISettingsState }) {
         )}
         <Button type="submit" disabled={pending} className="self-start">
           {pending && <Spinner data-icon="inline-start" />}
-          Save
+          Save provider
         </Button>
       </FieldGroup>
     </form>
