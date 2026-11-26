@@ -12,7 +12,7 @@ import {
   resetTables,
   respondIoEvent,
   respondIoRequest,
-  respondIoRoute,
+  ingestRespondIo,
   runMigrations,
   signRespondIo,
   signZaapi,
@@ -20,7 +20,7 @@ import {
   webhookLog,
   zaapiEvent,
   zaapiRequest,
-  zaapiRoute,
+  ingestZaapi,
 } from './helpers'
 
 let sse: ReturnType<typeof connectSupervisor>
@@ -45,7 +45,7 @@ const hex = fc.stringMatching(/^[0-9a-f]{1,64}$/)
 const cases = [
   {
     platform: 'zaapi',
-    route: zaapiRoute,
+    ingest: ingestZaapi,
     request: zaapiRequest,
     payload: payload(zaapiEvent),
     // Zaapi signs the raw bytes, so a signature over any other body is a mismatch.
@@ -59,7 +59,7 @@ const cases = [
   },
   {
     platform: 'respond_io',
-    route: respondIoRoute,
+    ingest: ingestRespondIo,
     request: respondIoRequest,
     payload: payload(respondIoEvent),
     // respond.io also accepts a signature over re-stringified JSON, so only foreign secrets and noise are mismatches.
@@ -73,7 +73,7 @@ const cases = [
   },
 ] as const
 
-describe.each(cases)('Property 18 for $platform', ({ platform, route, request, payload, signature }) => {
+describe.each(cases)('Property 18 for $platform', ({ platform, ingest, request, payload, signature }) => {
   it('answers 401 and persists nothing for any mismatched signature', async () => {
     await fc.assert(
       fc.asyncProperty(
@@ -81,7 +81,7 @@ describe.each(cases)('Property 18 for $platform', ({ platform, route, request, p
         async ([body, sig]) => {
           resetTables()
           sse.events.length = 0
-          const res = await route.POST(request(body, sig))
+          const res = await ingest(request(body, sig))
 
           expect(res.status).toBe(401)
           expect(await res.text()).toBe('')

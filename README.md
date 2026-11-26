@@ -1,9 +1,8 @@
 # CX Support Tool
 
-Multi-user support inbox for Photobook. It receives Zaapi and respond.io
-webhooks and messages from a Telegram test bot. Agents and supervisors reply,
-assign, and resolve conversations. Updates stream live over SSE, and AI can
-suggest replies.
+Multi-user support inbox for Photobook. It receives messages from a Telegram
+test bot. Agents and supervisors reply, assign, and resolve conversations.
+Updates stream live over SSE, and AI can suggest replies.
 
 ## Run locally
 
@@ -30,8 +29,7 @@ Set these in `.env.local`. See `.env.example` for descriptions.
 |---|---|---|
 | `SESSION_SECRET` | Yes | Every page and API call returns 500 |
 | `DATABASE_URL` | No | Defaults to `./cx_tool.db` |
-| `ZAAPI_WEBHOOK_SECRET`, `ZAAPI_API_KEY` | For Zaapi | Webhooks return 401, or 503 on message events; replies fail |
-| `RESPOND_IO_WEBHOOK_SECRET` | For respond.io | Webhooks return 401 |
+| `ZAAPI_API_KEY` | To send Zaapi replies | Replies fail |
 | `RESPOND_IO_API_KEY` | To send respond.io replies | Replies fail |
 | `TELEGRAM_BOT_TOKEN` | For the Telegram test channel | Telegram webhooks return 401; replies fail |
 | `AI_ENDPOINT_URL`, `AI_MODEL_NAME`, `AI_API_KEY` | No | AI suggestions are off |
@@ -47,14 +45,9 @@ Set these in `.env.local`. See `.env.example` for descriptions.
 
 ## Testing without live platforms
 
-- Only `/api/webhooks/*` is public. Every other route, including
-  `/api/health`, needs a login session.
-- respond.io webhooks make no outbound calls, so they work offline. Send the
-  base64 HMAC-SHA256 of the raw body in `x-webhook-signature`.
-- Zaapi message events call the Zaapi API, so they fail offline. Use
-  `tests/webhooks/ingestion.test.ts`, which stubs `fetch`.
-- `tests/webhooks/helpers.ts` has signers and sample payloads for both
-  platforms.
+Telegram is the only inbound channel. Its local endpoint, `/api/webhooks/telegram`,
+uses the bot-derived secret. Zaapi and respond.io ingestion fixtures exercise
+the shared intake service directly in `tests/webhooks/ingestion.test.ts`.
 
 ## Live testing with Telegram
 
