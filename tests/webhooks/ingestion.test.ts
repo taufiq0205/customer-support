@@ -7,7 +7,7 @@ import {
   resetTables,
   respondIoEvent,
   respondIoRequest,
-  respondIoRoute,
+  ingestRespondIo,
   runMigrations,
   signRespondIo,
   signZaapi,
@@ -16,14 +16,14 @@ import {
   webhookLog,
   zaapiEvent,
   zaapiRequest,
-  zaapiRoute,
+  ingestZaapi,
 } from './helpers'
 
 const { configureAutoAssign } = await import('@/lib/services/assignment')
 
 const cases = [
-  { platform: 'zaapi', route: zaapiRoute, request: zaapiRequest, sign: signZaapi, event: zaapiEvent },
-  { platform: 'respond_io', route: respondIoRoute, request: respondIoRequest, sign: signRespondIo, event: respondIoEvent },
+  { platform: 'zaapi', ingest: ingestZaapi, request: zaapiRequest, sign: signZaapi, event: zaapiEvent },
+  { platform: 'respond_io', ingest: ingestRespondIo, request: respondIoRequest, sign: signRespondIo, event: respondIoEvent },
 ] as const
 
 let sse: ReturnType<typeof connectSupervisor>
@@ -40,10 +40,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe.each(cases)('POST /api/webhooks for $platform', ({ platform, route, request, sign, event }) => {
+describe.each(cases)('Webhook ingestion for $platform', ({ platform, ingest, request, sign, event }) => {
   it('ingests a signed message, emits SSE, and logs it processed', async () => {
     const body = event()
-    const res = await route.POST(request(body, sign(body)))
+    const res = await ingest(request(body, sign(body)))
 
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('')
@@ -60,7 +60,7 @@ describe.each(cases)('POST /api/webhooks for $platform', ({ platform, route, req
 
   it('rejects an invalid signature with 401 and stores nothing but the log entry', async () => {
     const body = event()
-    const res = await route.POST(request(body, sign(event('tampered'))))
+    const res = await ingest(request(body, sign(event('tampered'))))
 
     expect(res.status).toBe(401)
     expect(await res.text()).toBe('')
@@ -73,14 +73,14 @@ describe.each(cases)('POST /api/webhooks for $platform', ({ platform, route, req
   })
 
   it('rejects a missing signature with 401', async () => {
-    const res = await route.POST(request(event()))
+    const res = await ingest(request(event()))
     expect(res.status).toBe(401)
     expect(db.select().from(webhookLog).all()).toEqual([expect.objectContaining({ processingStatus: 'rejected' })])
   })
 
   it('answers 500 for a signed but malformed payload and logs no payload text', async () => {
     const body = '{"text":"SYNTHETIC-SECRET-MARKER'
-    const res = await route.POST(request(body, sign(body)))
+    const res = await ingest(request(body, sign(body)))
 
     expect(res.status).toBe(500)
     expect(await res.text()).toBe('')
@@ -93,11 +93,11 @@ describe.each(cases)('POST /api/webhooks for $platform', ({ platform, route, req
   })
 })
 
-describe('POST /api/webhooks/zaapi lookup failure', () => {
+describe('Zaapi ingestion lookup failure', () => {
   it('answers 503 so Zaapi retries, and logs only the error name', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{"message":"SYNTHETIC-SECRET-MARKER"}', { status: 500 })))
     const body = zaapiEvent()
-    const res = await zaapiRoute.POST(zaapiRequest(body, signZaapi(body)))
+    const res = await ingestZaapi(zaapiRequest(body, signZaapi(body)))
 
     expect(res.status).toBe(503)
     expect(db.select().from(webhookLog).all()).toEqual([
@@ -115,7 +115,7 @@ describe('POST /api/webhooks auto-assign', () => {
       .run()
     expect(configureAutoAssign({ strategy: 'round_robin' }, 'sup').ok).toBe(true)
     const body = zaapiEvent()
-    const res = await zaapiRoute.POST(zaapiRequest(body, signZaapi(body)))
+    const res = await ingestZaapi(zaapiRequest(body, signZaapi(body)))
 
     expect(res.status).toBe(200)
     expect(db.select().from(conversations).all()).toEqual([expect.objectContaining({ assignedAgentId: 'agent-a' })])

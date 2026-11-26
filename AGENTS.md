@@ -2,7 +2,7 @@
 
 ## Scope
 
-CX Support Tool is a multi-user support inbox for Photobook. It receives Zaapi and respond.io webhooks, plus a Telegram bot used as a live test channel, and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
+CX Support Tool is a multi-user support inbox for Photobook. It receives messages from a Telegram bot used as a live test channel and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
 
 - It runs on the owner's Mac. There is no hosted deployment.
 - It handles live conversations only. It does not import historical chat exports.
@@ -21,7 +21,7 @@ CX Support Tool is a multi-user support inbox for Photobook. It receives Zaapi a
 ## Code map
 
 - `app/(app)/`: inbox, thread, reports, and settings pages. `app/(auth)/login`: login page.
-- `app/api/`: route handlers. Only `api/webhooks/*` is public; [proxy.ts](proxy.ts) guards everything else.
+- `app/api/`: route handlers. The [proxy](proxy.ts) lists routes that accept requests without a login. Telegram intake verifies its bot-derived secret.
 - `lib/adapters/`: one `PlatformAdapter` per platform (`verifyWebhook`, `parseWebhook`, `sendReply`), plus the AI client. Keep platform code here, separate from storage and services.
 - `scripts/`: `seed-users.ts` (migrations and users) and `telegram-poll.mts` (long-polls the bot and forwards updates to `api/webhooks/telegram`, so the app needs no public URL).
 - `lib/services/`: webhook intake, conversations, assignment, messages, canned responses, reports, redaction, AI settings.

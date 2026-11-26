@@ -1,6 +1,7 @@
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server'
 import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { proxy } from '@/proxy'
+import { config, proxy } from '@/proxy'
 import { createSession } from '@/lib/auth/session'
 
 const req = (path: string, headers: Record<string, string> = {}) =>
@@ -23,9 +24,19 @@ describe('proxy', () => {
     expect(new URL(res.headers.get('location')!).pathname).toBe('/login')
   })
 
-  it('returns 401 for unauthenticated API requests', async () => {
-    const res = await proxy(req('/api/x'))
+  it.each([
+    '/api/x',
+    '/api/webhooks/zaapi',
+    '/api/webhooks/respond-io',
+    '/api/webhooks/telegram/other',
+  ])('returns 401 for unauthenticated requests to %s', async (path) => {
+    expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url: path })).toBe(true)
+    const res = await proxy(req(path))
     expect(res.status).toBe(401)
+  })
+
+  it('routes Telegram intake directly to its secret check', () => {
+    expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url: '/api/webhooks/telegram' })).toBe(false)
   })
 
   it.each(['/login', '/api/auth/login'])('passes %s through unauthenticated', async (path) => {

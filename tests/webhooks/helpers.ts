@@ -9,10 +9,12 @@ export const { db, runMigrations } = await import('@/lib/db')
 export const { conversations, conversationHistory, messages, webhookLog, notifications, assignmentRules, roundRobinState, users } =
   await import('@/lib/db/schema')
 const { addClient, removeClient } = await import('@/lib/events/bus')
-export const zaapiRoute = await import('@/app/api/webhooks/zaapi/route')
-export const respondIoRoute = await import('@/app/api/webhooks/respond-io/route')
-const { ZAAPI_SIGNATURE_HEADER } = await import('@/lib/adapters/zaapi')
-const { RESPOND_IO_SIGNATURE_HEADER } = await import('@/lib/adapters/respond-io')
+const { ZAAPI_SIGNATURE_HEADER, zaapiAdapter } = await import('@/lib/adapters/zaapi')
+const { RESPOND_IO_SIGNATURE_HEADER, respondIoAdapter } = await import('@/lib/adapters/respond-io')
+const { handleWebhook } = await import('@/lib/services/webhook')
+
+export const ingestZaapi = (request: Request) => handleWebhook('zaapi', zaapiAdapter, request)
+export const ingestRespondIo = (request: Request) => handleWebhook('respond_io', respondIoAdapter, request)
 
 export const ZAAPI_SECRET = 'synthetic-zaapi-secret'
 export const RESPOND_IO_SECRET = 'synthetic-respond-secret'
