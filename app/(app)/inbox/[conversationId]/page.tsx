@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ComposeArea } from '@/components/compose/ComposeArea'
 import { RetryButton } from '@/components/compose/RetryButton'
+import { UnavailablePanel } from '@/components/unavailable-panel'
 import { Badge } from '@/components/ui/badge'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Message, MessageContent, MessageFooter, MessageHeader } from '@/components/ui/message'
 import {
   MessageScroller,
@@ -85,18 +86,48 @@ export default async function ThreadPage({
           <Badge variant="outline">{statusLabel(c.status)}</Badge>
           <CaseControls conversationId={c.id} assignment={assignment} transitions={TRANSITIONS[c.status] ?? []} />
         </header>
-        <details className="shrink-0 border-b bg-card px-3 text-sm sm:px-5">
-          <summary className="w-fit cursor-pointer py-2 font-medium focus-visible:outline-2">Case context</summary>
-          <dl className="grid gap-1 pb-3">
-            <div>
-              <dt className="inline text-muted-foreground">Case ID </dt>
-              <dd className="inline break-all font-mono">{c.id}</dd>
+        <details className="min-h-0 shrink-0 border-b bg-card px-3 text-sm sm:px-5">
+          <summary className="w-fit cursor-pointer py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2">
+            Case context
+          </summary>
+          <div
+            role="region"
+            aria-label="Case context details"
+            tabIndex={0}
+            className="max-h-[35svh] md:max-h-[min(45svh,32rem)] overflow-y-auto overscroll-contain pb-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <dl className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+              <dt className="text-muted-foreground">Case ID</dt>
+              <dd className="break-all font-mono">{c.id}</dd>
+              <dt className="text-muted-foreground">Customer</dt>
+              <dd className="break-words">{c.customerName ?? c.customerIdentifier ?? 'Unknown customer'}</dd>
+              <dt className="text-muted-foreground">Channel</dt>
+              <dd>{channel.label}</dd>
+              <dt className="text-muted-foreground">Platform</dt>
+              <dd>{platformLabel(c.platform)}</dd>
+              <dt className="text-muted-foreground">Status</dt>
+              <dd>{statusLabel(c.status)}</dd>
+              <dt className="text-muted-foreground">Owner</dt>
+              <dd className="break-words">{owner}</dd>
+            </dl>
+            <div className="mt-3 grid gap-2">
+              <UnavailablePanel title="Order and production">Order lookup, verification, shipment, and print status.</UnavailablePanel>
+              <UnavailablePanel title="SLA and urgency">Response target, time remaining, and priority.</UnavailablePanel>
+              <UnavailablePanel title="Photo previews">Images from this conversation.</UnavailablePanel>
+              <UnavailablePanel title="Customer history and sentiment">Previous conversations and customer sentiment.</UnavailablePanel>
+              <UnavailablePanel title="Linked channels">Other channel conversations for this customer.</UnavailablePanel>
+              <UnavailablePanel title="Case actions">
+                <p>Order verification and approval workflows are required before these decisions can be made.</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {['Reprint', 'Place hold', 'Refund', 'Escalate', 'Override'].map((action) => (
+                    <Button key={action} type="button" size="sm" variant="outline" disabled>
+                      {action}
+                    </Button>
+                  ))}
+                </div>
+              </UnavailablePanel>
             </div>
-            <div>
-              <dt className="inline text-muted-foreground">Platform </dt>
-              <dd className="inline">{platformLabel(c.platform)}</dd>
-            </div>
-          </dl>
+          </div>
         </details>
         <MessageScrollerProvider autoScroll>
           <MessageScroller className="flex-1">

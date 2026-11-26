@@ -1,6 +1,6 @@
 'use client'
 
-import { ChartColumnIcon, InboxIcon, SettingsIcon } from 'lucide-react'
+import { BotIcon, ChartColumnIcon, InboxIcon, SettingsIcon } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { buttonVariants } from '@/components/ui/button'
@@ -13,6 +13,7 @@ export function PrimaryNavigation({ role }: { role: Role }) {
     { href: '/inbox', label: 'Inbox', icon: InboxIcon },
     ...(role === 'supervisor' ? [
       { href: '/reports', label: 'Supervisor Desk', icon: ChartColumnIcon },
+      { href: '/ai-agent', label: 'AI Agent', icon: BotIcon },
       { href: '/settings', label: 'Settings', icon: SettingsIcon },
     ] : []),
   ]
@@ -22,7 +23,7 @@ export function PrimaryNavigation({ role }: { role: Role }) {
       aria-label="Primary navigation"
       className="shrink-0 border-b bg-card md:w-60 md:border-b-0 md:border-r"
     >
-      <ul className={cn('grid md:flex md:flex-col md:gap-1 md:p-3', links.length === 1 ? 'grid-cols-1' : 'grid-cols-3')}>
+      <ul className="grid auto-cols-fr grid-flow-col md:flex md:flex-col md:gap-1 md:p-3">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
@@ -32,7 +33,7 @@ export function PrimaryNavigation({ role }: { role: Role }) {
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   buttonVariants({ variant: active ? 'secondary' : 'ghost' }),
-                  'h-auto min-h-14 w-full flex-col gap-1 px-1 py-2 text-[11px] md:min-h-9 md:flex-row md:justify-start md:gap-2 md:px-3 md:text-sm',
+                  'h-auto min-h-14 w-full flex-col gap-1 px-1 py-2 text-center text-[11px] whitespace-normal md:min-h-9 md:flex-row md:justify-start md:gap-2 md:px-3 md:text-sm',
                   active && 'bg-accent text-accent-foreground',
                 )}
               >

@@ -59,14 +59,16 @@ describe('app layout', () => {
     expect(html).toContain('>agent<')
     expect(html).toContain('href="/inbox"')
     expect(html).not.toContain('href="/reports"')
+    expect(html).not.toContain('href="/ai-agent"')
     expect(html).not.toContain('href="/settings"')
     expect(html).toContain('<p>child</p>')
     expect(html).toContain('aria-label="No unread notifications"')
   })
 
-  it('links supervisors to the Supervisor Desk and Settings', async () => {
+  it('links supervisors to the Supervisor Desk, AI Agent, and Settings', async () => {
     const html = renderToStaticMarkup(await AppLayout({ children: null }))
     expect(html).toContain('href="/reports"')
+    expect(html).toContain('href="/ai-agent"')
     expect(html).toContain('href="/settings"')
   })
 
