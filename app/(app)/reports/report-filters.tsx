@@ -1,6 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { Card, CardContent } from '@/components/ui/card'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CHANNELS, PLATFORMS } from '@/lib/adapters/types'
@@ -39,47 +41,59 @@ export function ReportFilters({
   ]
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Keyed by value so a range the server fell back from shows what is actually reported. */}
-      <Input
-        key={`from-${values.from}`}
-        type="date"
-        aria-label="From"
-        className="w-40"
-        defaultValue={values.from}
-        max={values.to}
-        onChange={(e) => update('from', e.target.value)}
-      />
-      <Input
-        key={`to-${values.to}`}
-        type="date"
-        aria-label="To"
-        className="w-40"
-        defaultValue={values.to}
-        min={values.from}
-        onChange={(e) => update('to', e.target.value)}
-      />
-      {filters.map(({ param, label, items }) => (
-        <Select
-          key={param}
-          items={items}
-          defaultValue={items.some((i) => i.value === values[param]) ? values[param] : null}
-          onValueChange={(value) => update(param, value)}
-        >
-          <SelectTrigger aria-label={label}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {items.map((item) => (
-                <SelectItem key={item.value ?? item.label} value={item.value}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      ))}
-    </div>
+    <Card>
+      <CardContent>
+        <FieldGroup className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+          {/* Remount date inputs when the server returns a fallback range. */}
+          <Field className="min-w-0">
+            <FieldLabel htmlFor="report-from">From</FieldLabel>
+            <Input
+              key={values.from}
+              id="report-from"
+              type="date"
+              className="min-w-0 bg-card"
+              defaultValue={values.from}
+              max={values.to}
+              onChange={(e) => update('from', e.target.value)}
+            />
+          </Field>
+          <Field className="min-w-0">
+            <FieldLabel htmlFor="report-to">To</FieldLabel>
+            <Input
+              key={values.to}
+              id="report-to"
+              type="date"
+              className="min-w-0 bg-card"
+              defaultValue={values.to}
+              min={values.from}
+              onChange={(e) => update('to', e.target.value)}
+            />
+          </Field>
+          {filters.map(({ param, label, items }) => (
+            <Field key={param} className="min-w-0">
+              <FieldLabel htmlFor={`report-${param}`}>{label}</FieldLabel>
+              <Select
+                items={items}
+                value={items.some((i) => i.value === values[param]) ? values[param] : null}
+                onValueChange={(value) => update(param, value)}
+              >
+                <SelectTrigger id={`report-${param}`} className="w-full bg-card">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {items.map((item) => (
+                      <SelectItem key={item.value ?? item.label} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          ))}
+        </FieldGroup>
+      </CardContent>
+    </Card>
   )
 }

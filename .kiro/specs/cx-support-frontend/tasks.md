@@ -48,7 +48,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
   - **Done when** an agent claims an accessible case, a supervisor reassigns it, and the new owner receives a notification. Verify that snoozing and resolving remove cases from the active queue, assigning a resolved case still conflicts, and a synthetic inbound message reopens it. Run `npm test -- tests/api/assign-route.test.ts tests/api/conversations-routes.test.ts tests/api/notifications-route.test.ts tests/services/property-13-reopen-on-message.test.ts`.
   - _Requirements: 2.4, 3.4, 6.2_
 
-- [ ] 7. Restyle team reports as the existing Supervisor Desk view
+- [x] 7. Restyle team reports as the existing Supervisor Desk view
   - Depends on task 3. Update `app/(app)/reports/page.tsx` and `report-filters.tsx`. Keep `/reports` and its supervisor guard. Preserve open, queue, and snoozed totals, received and resolved counts, average response and resolution times, and the existing filters, breakdowns, and low-volume handling.
   - **Done when** the supervisor can change date, agent, platform, and channel filters, the summary updates through existing refresh behavior, and the same synthetic records reconcile with the inbox. Run `npm test -- tests/app/reports-page.test.tsx tests/api/reports-route.test.ts tests/services/property-15-report-totals.test.ts`.
   - _Requirements: 4.1, 6.2_
@@ -140,3 +140,10 @@ At 390 × 844, Snooze saved the selected local time as epoch milliseconds and re
 Reopen and a signed synthetic respond.io webhook each returned the case to Open. The thread and queue updated over SSE, and the report summary matched the same case throughout.
 
 The four required suites passed 29 tests. The full suite passed 598 tests across 53 files, and `npx tsc --noEmit --incremental false` passed. Browser checks used the local development server and synthetic data.
+
+
+## Task 7 verification
+
+Chrome verified both date inputs and the agent, platform, and channel filters on `/reports`. A signed synthetic respond.io webhook raised Open now, In queue now, and Received from one to two without a reload. The two cases appeared in the supervisor's unassigned open inbox. Chrome also verified that an agent visiting `/reports` returns to the inbox and that a keyboard can scroll a breakdown table at 390 pixels.
+
+The three focused suites passed 18 tests. The full suite passed 598 tests. TypeScript and the production webpack build passed. Browser verification used an isolated SQLite database and synthetic webhook requests.
