@@ -1,9 +1,9 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { configureAutoAssign, type AutoAssignRule } from '@/lib/services/assignment'
 import { currentUser } from '@/lib/auth/current-user'
 import { aiSettingsView, parseAISettings, saveAISettings } from '@/lib/services/ai-settings'
+import { configureAutoAssign, type AutoAssignRule, type currentAutoAssignRule } from '@/lib/services/assignment'
 
 export type AISettingsState = ReturnType<typeof aiSettingsView> & { saved: boolean; field?: string }
 
@@ -21,7 +21,12 @@ export async function saveAISettingsAction(_prev: AISettingsState, formData: For
   return { ...aiSettingsView(), saved: true }
 }
 
-export async function saveAutoAssignAction(_previous: string, formData: FormData): Promise<string> {
+export type AutoAssignState = {
+  rule: ReturnType<typeof currentAutoAssignRule>
+  error?: string
+}
+
+export async function saveAutoAssignAction(previous: AutoAssignState, formData: FormData): Promise<AutoAssignState> {
   const session = await currentUser()
   if (session.role !== 'supervisor') redirect('/inbox')
 
@@ -33,8 +38,10 @@ export async function saveAutoAssignAction(_previous: string, formData: FormData
   } else if (strategy === 'manual' && typeof agentId === 'string' && agentId) {
     rule = { strategy, manualAgentId: agentId }
   } else {
-    return 'Choose a routing rule and select an agent for fixed assignment.'
+    return { ...previous, error: 'Choose a routing rule and select an agent for fixed assignment.' }
   }
 
-  return configureAutoAssign(rule, session.userId).ok ? '' : 'Choose an active agent.'
+  const result = configureAutoAssign(rule, session.userId)
+  if (!result.ok) return { ...previous, error: 'Choose an active agent.' }
+  return { rule: { strategy: result.value.strategy, manualAgentId: result.value.manualAgentId } }
 }

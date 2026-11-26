@@ -12,15 +12,15 @@ export function AutoAssignmentForm({ rule, agents }: {
 }) {
   const [strategy, setStrategy] = useState<string>(rule?.strategy ?? '')
   const [agentId, setAgentId] = useState(rule?.manualAgentId ?? '')
-  const [error, action, pending] = useActionState(saveAutoAssignAction, '')
+  const [{ rule: savedRule, error }, action, pending] = useActionState(saveAutoAssignAction, { rule })
   const selectClass = 'h-9 w-full rounded-lg border border-input bg-background px-2 text-sm'
 
   return (
-    <form action={action}>
+    <form action={action} onReset={(event) => event.preventDefault()}>
       <FieldGroup>
         <p role="status" className="text-sm text-muted-foreground">
-          Current rule: {rule?.strategy === 'round_robin' ? 'Round robin'
-            : rule?.strategy === 'manual' ? agents.find((agent) => agent.id === rule.manualAgentId)?.displayName ?? 'Agent unavailable'
+          Current rule: {savedRule?.strategy === 'round_robin' ? 'Round robin'
+            : savedRule?.strategy === 'manual' ? agents.find((agent) => agent.id === savedRule.manualAgentId)?.displayName ?? 'Agent unavailable'
             : 'Unassigned'}
         </p>
         <Field>

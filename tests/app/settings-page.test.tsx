@@ -82,16 +82,20 @@ describe('saveAISettingsAction', () => {
 describe('saveAutoAssignAction', () => {
   it('rejects agents before changing the current rule', async () => {
     user = agent('agent-a')
-    await expect(saveAutoAssignAction('', form({ strategy: 'round_robin' }))).rejects.toThrow('REDIRECT:/inbox')
+    await expect(saveAutoAssignAction({ rule: undefined }, form({ strategy: 'round_robin' }))).rejects.toThrow('REDIRECT:/inbox')
     expect(currentAutoAssignRule()).toBeUndefined()
   })
 
   it('persists valid routing and preserves it when an invalid rule is submitted', async () => {
-    expect(await saveAutoAssignAction('', form({ strategy: 'manual', agentId: 'agent-a' }))).toBe('')
-    expect(await saveAutoAssignAction('', form({ strategy: 'manual', agentId: 'sup' }))).toBe('Choose an active agent.')
-    expect(await saveAutoAssignAction('', form({ strategy: 'invalid' }))).toMatch(/Choose a routing rule/)
+    const saved = await saveAutoAssignAction({ rule: undefined }, form({ strategy: 'manual', agentId: 'agent-a' }))
+    expect(saved).toEqual({ rule: { strategy: 'manual', manualAgentId: 'agent-a' } })
+    await expect(saveAutoAssignAction(saved, form({ strategy: 'manual', agentId: 'sup' })))
+      .resolves.toEqual({ ...saved, error: 'Choose an active agent.' })
+    await expect(saveAutoAssignAction(saved, form({ strategy: 'invalid' })))
+      .resolves.toMatchObject({ rule: saved.rule, error: expect.stringMatching(/Choose a routing rule/) })
     expect(renderToStaticMarkup(await SettingsPage())).toContain('Current rule: agent-a')
-    expect(await saveAutoAssignAction('', form({ strategy: 'round_robin' }))).toBe('')
+    await expect(saveAutoAssignAction(saved, form({ strategy: 'round_robin' })))
+      .resolves.toEqual({ rule: { strategy: 'round_robin', manualAgentId: null } })
     expect(currentAutoAssignRule()).toEqual({ strategy: 'round_robin', manualAgentId: null })
   })
 })
