@@ -78,7 +78,7 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
 
 ## Phase 4 — Verify and hand off
 
-- [ ] 11. Verify the redesigned application and hand off backend gaps
+- [x] 11. Verify the redesigned application and hand off backend gaps
   - Depends on task 10. Run `npm test`, `npx tsc --noEmit --incremental false`, and `npm run build` from the root. Use the isolated database and settings path from task 2. Run the app with synthetic users and messages using the fixtures and test signers documented in the [README](../../../README.md). Keep real customer data and secrets out of screenshots and logs.
   - Capture desktop and mobile browser evidence for login and role boundaries, queue search and navigation, real thread updates, reply and retry, case switch during AI suggestion, status and assignment, supervisor reports/settings, and placeholder navigation. Compare queue, thread, and reports against the same synthetic fixture.
   - If the dedicated Telegram test channel is available for use, verify inbound through visible reply delivery there. Record fixture and stub results separately from live delivery. Record missing channel or provider evidence explicitly.
@@ -148,3 +148,41 @@ Chrome verified supervisor settings at 1440 × 900 and 390 × 844 on the local w
 A signed synthetic Telegram webhook assigned a new conversation to the configured agent. The agent inserted the edited canned response in the mobile composer with the customer name substituted. Direct agent access to Settings redirected to Inbox. An agent write to the canned response endpoint returned 403. The settings action test also verified that agents cannot change routing.
 
 The four focused suites passed 28 tests. The full suite passed 604 tests. TypeScript and the production webpack build passed. Browser verification used an isolated database and provider settings file. Live Telegram delivery and live AI provider calls were outside this check.
+
+## Task 11 verification
+
+Ran against `b7457b7` on `chore/cx-frontend-verification` with temporary SQLite and AI settings paths, synthetic accounts, and test provider values.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | Passed 614 tests across 54 files. |
+| `npx tsc --noEmit --incremental false` | Passed. |
+| `npm run build` | Turbopack could not bind its CSS worker port, including on the elevated retry. |
+| `npm run build -- --webpack` | Passed. The resulting app started on loopback. |
+| Production HTTP smoke | Both synthetic roles signed in. Agent requests to Reports, Settings, and AI Agent redirected to Inbox. A signed Telegram fixture appeared in the queue and thread. All six supervisor AI deep links rendered unavailable states. Reports, Escalations, Settings, and the reports API returned 200. |
+
+PR #47 changed frontend pages, shared UI, and tests. Its diff contains no API route, adapter, service, or schema changes. The [placeholder handoff](design.md#placeholder-handoff) records the current entry points and remaining decisions.
+
+The embedded browser host was unavailable. Native Chrome verified agent sign-in, opening the synthetic conversation, claiming it, expanding Case Context to read unavailable states, and redirecting an agent from /ai-agent to Inbox. Native Chrome also verified supervisor sign-in, Escalations, the Settings sections, the Knowledge Gaps deep link, and supervisor logout back to sign-in. Team Reports showed one open, zero queued, zero snoozed, one received, and zero resolved. These counts matched the single claimed inbox fixture. Desktop and mobile screenshots, report filter changes, and the remaining interactive workflows are pending. Task 7 remains unchecked. The Telegram webhook status request failed, so live Telegram inbound and visible reply delivery remain unverified. No live AI provider call was verified.
+
+Native Chrome also applied the Telegram report filter by keyboard. The URL retained `channel=telegram`, and the report showed one open, one received, and zero resolved. Inbox search found the fixture and preserved `search=Synthetic+QA` in the thread and its Back to inbox link. Resolving the case showed Resolved and offered Reopen. Reopening restored Open and returned the fixture to the filtered queue.
+
+A Playwright script drove system Chrome against the same server and fixture. Agent A snoozed the case at 1440 × 900 with a reason. The thread showed Snoozed and Reopen, and the stored `snoozed_until` matched the chosen local time. The Open queue emptied without a reload. The Snoozed and All filters still found the case, and the history row kept the reason. Reopen returned the case to the Open queue. At 390 × 844 the supervisor reassigned the case to Agent B and back to Agent A, and the database owner changed each time. Agent B's notifications contained the case. Desktop and mobile screenshots of these steps stayed outside the repository.
+
+The previous production server's test bot token was unrecoverable, so it was restarted on the same port and database with a synthetic token, session secret, and AI settings file. The AI endpoint pointed to a local stub that answers after 4.5 seconds. A signed synthetic Telegram webhook created a second case. No auto-assignment rule was set, so the database assigned that case to Agent A to put both cases in one queue.
+
+| Flow | 1440 × 900 | 390 × 844 |
+| --- | --- | --- |
+| SSE | A signed webhook message appeared in the open thread without a reload. | Same. The hidden queue preview also updated. |
+| Case switch during AI suggestion | After a full navigation and after queue navigation, the second case's composer stayed empty. The suggestion appeared in the first case's draft on return. | Same, using Back to inbox and the queue. |
+| Reply and retry | The synthetic token made Telegram reject the send. The reply was stored and shown as Failed with Retry. Retry sent through the existing path and added another failed attempt. | Same. |
+
+Successful delivery needs the live bot token, so the delivered and sent states remain unverified in the browser. While the agent viewed the first case, the queue still showed its unread count.
+
+The supervisor report matched `/api/reports` for every filter at 1440 × 900 and 390 × 844. With no filter, 2 conversations were received and 0 resolved. Filtering to Agent A or to Telegram gave the same totals, because Agent A owns both fixture cases and both arrived through Telegram. Agent B, WhatsApp, and a date range that ends yesterday each showed zero. At 390 × 844 the breakdown tables scroll inside their own containers, and the page stays 390 pixels wide.
+
+Settings saves were checked at 390 × 844. A new model name persisted through reload. The API key field stayed empty, and the stored key was unchanged. The model name was then restored for the AI stub. A routing rule that assigns new cases to Agent B persisted through reload, and the next signed Telegram case was assigned to Agent B. A canned response was created, survived reload, and was removed after the delete confirmation.
+
+Live Telegram was then checked by restarting the server with the bot token from `.env.local`. The other settings stayed synthetic, and `npm run telegram:poll` forwarded updates to it. The owner sent the bot a private message from a phone. It arrived as a new Telegram case, the Agent B routing rule assigned it, and Agent B saw it in the inbox and thread. Agent B replied from the thread at 1440 × 900. Telegram accepted the send, and the thread showed the reply as Sent. The first run of the reply check wrongly passed because the owner's message matched the reply text. The fixed check matches only outbound messages.
+
+The Sent state comes from Telegram's API. The owner confirmed that the reply appeared in the Telegram chat one minute after the inbound message. The app has no separate Delivered signal for Telegram. Live AI provider calls remain unverified.
