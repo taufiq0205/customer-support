@@ -15,7 +15,7 @@ export default async function SettingsPage() {
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4 sm:p-6">
       <h1 className="font-heading text-2xl font-semibold">Settings</h1>
       <div className="grid gap-6 md:grid-cols-2 md:items-start">
-        <Card>
+        <Card id="reply-suggestions">
           <CardHeader>
             <CardTitle>Reply Suggestion Provider</CardTitle>
             <CardDescription>The OpenAI-compatible endpoint that drafts reply suggestions. Changes apply at once.</CardDescription>

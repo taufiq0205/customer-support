@@ -31,6 +31,15 @@ describe('reports page', () => {
   it('sends agents back to the inbox', async () => {
     user = agent('agent-a')
     await expect(reports()).rejects.toThrow('REDIRECT:/inbox')
+    await expect(reports({ view: 'escalations' })).rejects.toThrow('REDIRECT:/inbox')
+  })
+
+  it('shows unavailable approvals without live totals and preserves team report filters', async () => {
+    const html = await reports({ view: 'escalations', channel: 'telegram' })
+    expect(html).toContain('Approval queue')
+    expect(html).toContain('Not connected')
+    expect(html).not.toContain('Open now')
+    expect(html).toContain('href="/reports?channel=telegram"')
   })
 
   it('labels agent rows by name and flags low volume', async () => {

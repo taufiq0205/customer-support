@@ -62,13 +62,13 @@ Read [requirements.md](requirements.md), [design.md](design.md), and [AGENTS.md]
 
 ## Phase 3 — Add placeholders for features to build later
 
-- [ ] 9. Add Case Context and Supervisor Desk placeholders
+- [x] 9. Add Case Context and Supervisor Desk placeholders
   - Depends on tasks 4–8. Add the collapsed Case Context drawer to the thread. Present real source channel, customer, status, and owner. Add lightweight unavailable sections for order and production details, photo previews, customer history and sentiment, and multi-channel links. Keep one accessible approval or action area for future reprints, holds, refunds, escalations, and overrides.
   - Add the Escalations view to `/reports`. Render approval queue and detail shells with unavailable states. Put future SLA, batch alerts, and CSAT in their relevant context. Keep those states visually distinct from the connected team totals. Avoid live-looking timers, example approvals, or synthetic customers in the product.
   - **Done when** the UI shows where each future workflow will live and its unavailable actions cause no state change or network mutation. Verify the drawer and the report tabs with keyboard and at phone width.
   - _Requirements: 5.1, 5.2, 5.5, 6.1_
 
-- [ ] 10. Build the supervisor AI Agent workspace
+- [x] 10. Build the supervisor AI Agent workspace
   - Depends on task 9. Add `app/(app)/ai-agent/page.tsx` and colocated view components as needed. Check the server session before rendering. Add role-appropriate navigation in `app/(app)/layout.tsx`. Use the local prototype's `AiAgentWorkspace.tsx` and the [handoff table](design.md#placeholder-handoff).
   - **Overview and Agent Config.** Show the metric cards and definitions in the design, period and channel affordances, and a link to the working reply-suggestion provider. Depict instructions, allowed channels and sources, handoff rules, pause, and draft/publish controls as unavailable. The pause control describes the future autonomous agent.
   - **Knowledge Base and Knowledge Gaps.** Show article list, editor and source preview states. Give Knowledge Gaps category filters and detail slots for frequency, examples, handoff reason, and linked cases. Depict draft, retrieval preview, publish, and validation without claiming an article answered a question.
