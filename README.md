@@ -1,8 +1,10 @@
 # CX Support Tool
 
-Multi-user support inbox for Photobook. It receives messages from a Telegram
-test bot. Agents and supervisors reply, assign, and resolve conversations.
-Updates stream live over SSE, and AI can suggest replies.
+A portfolio project: a multi-user customer support inbox that runs locally.
+It receives messages from a Telegram test bot. Agents reply, assign, snooze,
+and resolve conversations, and AI can draft a reply. Supervisors also get the
+Supervisor Desk reports, the AI Agent workspace, and settings for the AI
+provider, canned responses, and auto-assignment. Updates stream live over SSE.
 
 ## Run locally
 

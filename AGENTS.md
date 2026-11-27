@@ -2,7 +2,7 @@
 
 ## Scope
 
-CX Support Tool is a multi-user support inbox for Photobook. It receives messages from a Telegram bot used as a live test channel and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
+CX Support Tool is a portfolio project: a multi-user customer support inbox. It receives messages from a Telegram bot used as a live test channel and gives agents one inbox to reply to, assign, snooze, and resolve conversations. Supervisors also see reports and manage AI settings. Updates stream to the browser over SSE. AI reply suggestions are optional.
 
 - It runs on the owner's Mac. There is no hosted deployment.
 - It handles live conversations only. It does not import historical chat exports.
