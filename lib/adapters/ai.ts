@@ -22,7 +22,7 @@ export interface AIAdapter {
 
 const TIMEOUT_MS = 10_000
 const SYSTEM_PROMPT =
-  'You are drafting the next reply from a Photobook customer support agent. ' +
+  'You are drafting the next reply from a customer support agent. ' +
   'Keep placeholders such as [NAME], [EMAIL], [PHONE], [ORDER] and [ADDRESS] exactly as written. ' +
   'Reply with the message text only.'
 const ROLES = { customer: 'user', agent: 'assistant' } as const

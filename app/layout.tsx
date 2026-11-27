@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "Photobook Care Studio",
-  description: "Customer support inbox for Photobook Worldwide.",
+  title: "CX Support Tool",
+  description: "Multi-user customer support inbox, built as a portfolio project.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
